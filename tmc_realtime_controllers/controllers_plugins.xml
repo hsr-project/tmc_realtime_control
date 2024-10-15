@@ -1,0 +1,16 @@
+<library path="tmc_realtime_controllers">
+  <class name="tmc_realtime_controllers/DigitalOutputController"
+         type="tmc_realtime_controllers::DigitalOutputController"
+         base_class_type="controller_interface::ControllerInterface">
+     <description>
+       Controller for digital output.
+     </description>
+  </class>
+  <class name="tmc_realtime_controllers/DigitalInputController"
+         type="tmc_realtime_controllers::DigitalInputController"
+         base_class_type="controller_interface::ControllerInterface">
+     <description>
+       Controller for digital input.
+     </description>
+  </class>
+</library>

@@ -1,0 +1,25 @@
+<package format="3">
+  <name>tmc_realtime_controllers</name>
+  <version>2.0.0</version>
+  <description>The robot indipendent controllers.</description>
+
+  <maintainer email="xr-hsr-support@mail.toyota.co.jp">HSR Support</maintainer>
+
+  <author>Keisuke Takeshita</author>
+  <author>Kotaro Ushijima</author>
+  <author>Tamaki Nishino</author>
+
+  <license>BSD 3-clause Clear License</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>controller_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>realtime_tools</depend>
+  <depend>std_msgs</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

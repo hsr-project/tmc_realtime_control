@@ -1,0 +1,7 @@
+float64 distance  # The command distance
+---
+float64 distance  # The current distance
+bool stalled      # True if the gripper is stalled
+---
+float64 distance  # The current distance
+bool stalled      # True if the gripper is stalled

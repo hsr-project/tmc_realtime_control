@@ -1,0 +1,63 @@
+<launch> 
+    <arg name="debug" default="false"/>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find tmc_realtime_controllers)/config/diffdrive_simulation.rviz"/>
+
+    <param name="robot_description" command="$(find xacro)/xacro.py $(find tmc_hsr_beetle_model)/robots/hsr_beetle.urdf.xacro"/>
+    
+    <node if="$(arg debug)" name="hsr_beetle_hw" pkg="tmc_hsr_beetle_mock_hw" type="hsr_beetle_mock_hw"
+        respawn="false" output="screen" launch-prefix="gnome-terminal -x gdb -ex run --args"/>
+    <node unless="$(arg debug)" name="hsr_beetle_hw" pkg="tmc_hsr_beetle_mock_hw"
+        type="hsr_beetle_mock_hw" respawn="false" output="screen"/>
+
+    <node name="robot_state_pub" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node name="joint_state_pub" pkg="joint_state_publisher" type="joint_state_publisher"/>
+    <rosparam>
+      source_list:
+        - /hsr_beetle/joint_states
+    </rosparam>
+    <node name="odom_on_map" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 /map /odom 100"/>
+
+    <node name="controller_spawner" 
+          pkg="controller_manager"
+          type="spawner"
+          respawn="false"
+          output="screen"
+          ns="/hsr_beetle"
+          args="--namespace=/hsr_beetle joint_state_controller diffdrive_command_controller omni_base_odometry_controller"/>
+
+    <rosparam ns="/hsr_beetle">
+      hardware:
+        publish_rate: 100
+      diffdrive_command_controller:
+        type: tmc_realtime_controllers/DiffdriveCommandController
+        left_wheel_joint: left_wheel_joint
+        right_wheel_joint: right_wheel_joint
+        tread: 0.141
+        wheel_radius: 0.040
+      omni_base_odometry_controller:
+        type: tmc_hsr_beetle_controllers/OmniBaseOdometryController
+        steer_joint: base_steer_joint
+        left_wheel_joint: left_wheel_joint
+        right_wheel_joint: right_wheel_joint
+        tread: 0.141
+        caster_offset: 0.1115
+        wheel_radius: 0.040
+        odom_frame: /odom
+        base_frame: /base_footprint
+      joint_state_controller:
+        type: joint_state_controller/JointStateController
+        publish_rate: 50
+    </rosparam>
+
+
+    <remap from="/command_velocity" to="/hsr_beetle/diffdrive_command_controller/command_velocity"/>
+
+    <node pkg="joy" type="joy_node" name="joy"/>
+
+    <node pkg="tmc_hsr_beetle_teleop" type="teleop_omni_base_joy.py" name="teleop_omni_base">
+        <param name="max_linear_velocity" value="0.3"/>
+        <param name="max_angular_velocity" value="1.0"/>
+    </node>
+
+</launch>

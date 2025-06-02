@@ -3,19 +3,37 @@ project(tmc_realtime_controllers)
 
 find_package(ament_cmake REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tmc_control_msgs REQUIRED)
+find_package(tmc_exxx_servo_motor_protocol REQUIRED)
+find_package(tmc_utils REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}/digital_output_controller.cpp
   src/${PROJECT_NAME}/digital_input_controller.cpp
+  src/${PROJECT_NAME}/exxx_drive_mode_controller.cpp
+  src/${PROJECT_NAME}/servo_state_broadcaster.cpp
+  src/${PROJECT_NAME}/infrequent_servo_access_controller.cpp
 )
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test>
+    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:test>
+)
+
 ament_target_dependencies(${PROJECT_NAME}
   controller_interface
   pluginlib
   realtime_tools
   std_msgs
+  tmc_control_msgs
+  tmc_exxx_servo_motor_protocol
 )
 
 pluginlib_export_plugin_description_file(controller_interface controllers_plugins.xml)
@@ -27,6 +45,11 @@ install(
   LIBRARY DESTINATION lib
 )
 
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
@@ -34,6 +57,47 @@ if(BUILD_TESTING)
   target_link_libraries(digital_output_controller_test ${PROJECT_NAME})
   ament_add_gtest(digital_input_controller_test test/digital_input_controller_test.cpp)
   target_link_libraries(digital_input_controller_test ${PROJECT_NAME})
+
+  ament_add_gtest(exxx_drive_mode_controller_test test/exxx_drive_mode_controller_test.cpp)
+  ament_target_dependencies(${PROJECT_NAME}
+    controller_interface
+    lifecycle_msgs
+    pluginlib
+    realtime_tools
+    std_msgs
+    tmc_control_msgs
+    tmc_utils
+  )
+
+  target_link_libraries(exxx_drive_mode_controller_test ${PROJECT_NAME})
+
+  ament_add_gtest(servo_state_broadcaster_test test/servo_state_broadcaster_test.cpp)
+  ament_target_dependencies(servo_state_broadcaster_test
+    controller_interface
+    lifecycle_msgs
+    pluginlib
+    realtime_tools
+    std_msgs
+    tmc_control_msgs
+    tmc_utils
+  )
+
+  target_link_libraries(servo_state_broadcaster_test ${PROJECT_NAME})
+  ament_add_gtest(infrequent_servo_access_controller_test test/infrequent_servo_access_controller_test.cpp
+                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+  ament_target_dependencies(infrequent_servo_access_controller_test
+    controller_interface
+    lifecycle_msgs
+    pluginlib
+    realtime_tools
+    std_msgs
+    tmc_control_msgs
+    tmc_exxx_servo_motor_protocol
+    tmc_utils
+  )
+
+  target_link_libraries(infrequent_servo_access_controller_test ${PROJECT_NAME})
+
 endif()
 
 
@@ -41,6 +105,7 @@ ament_export_dependencies(
   controller_interface
   realtime_tools
   std_msgs
+  tmc_control_msgs
 )
 ament_export_libraries(
   ${PROJECT_NAME}

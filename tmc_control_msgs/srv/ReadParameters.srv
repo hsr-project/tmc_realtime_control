@@ -1,0 +1,5 @@
+string name
+string[] keys
+---
+tmc_control_msgs/ServoParam[] values
+bool success

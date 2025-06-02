@@ -13,4 +13,32 @@
        Controller for digital input.
      </description>
   </class>
+  <class name="tmc_realtime_controllers/ExxxDriveModeController"
+         type="tmc_realtime_controllers::ExxxDriveModeController"
+         base_class_type="controller_interface::ControllerInterface">
+     <description>
+       Controller for drive mode.
+     </description>
+  </class>
+  <class name="tmc_realtime_controllers/ServoStateBroadcaster"
+         type="tmc_realtime_controllers::ServoStateBroadcaster"
+         base_class_type="controller_interface::ControllerInterface">
+     <description>
+       Controller for servo.
+     </description>
+  </class>
+  <class name="tmc_realtime_controllers/InfrequentReadingController"
+         type="tmc_realtime_controllers::InfrequentReadingController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Controller to read servo parameters.
+    </description>
+  </class>
+  <class name="tmc_realtime_controllers/InfrequentWritingController"
+         type="tmc_realtime_controllers::InfrequentWritingController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Controller to write servo parameters.
+    </description>
+  </class>
 </library>

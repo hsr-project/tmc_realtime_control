@@ -1,0 +1,14 @@
+tmc_digital_input_controller:
+  type: tmc_realtime_controllers/DigitalInputController
+  publish_rate: 0
+
+tmc_digital_output_controller:
+  type: tmc_realtime_controllers/DigitalOutputController
+
+tmc_color_command_controller:
+  type: tmc_realtime_controllers/ColorCommandController
+  publish_rate: 1
+
+tmc_diagnostic_controller:
+  type: tmc_realtime_controllers/DiagnosticController
+  publish_rate: 0

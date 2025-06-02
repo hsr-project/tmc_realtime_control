@@ -1,0 +1,32 @@
+tmc_digital_input_controller:
+  type: tmc_realtime_controllers/DigitalInputController
+  publish_rate: 100
+
+tmc_digital_output_controller:
+  type: tmc_realtime_controllers/DigitalOutputController
+
+tmc_color_command_controller:
+  type: tmc_realtime_controllers/ColorCommandController
+  color1:
+    timeout: 1.0
+    timeout_color: [0.5, 0.5, 0.5]
+  color2:
+    timeout: 1.0
+    timeout_color: [0.5, 0.5, 0.5]
+
+tmc_diagnostic_controller:
+  type: tmc_realtime_controllers/DiagnosticController
+  publish_rate: 100
+
+tmc_empty_command_controller:
+  type: tmc_realtime_controllers/EmptyCommandController
+  service_time_out: 1000
+
+tmc_set_bool_command_controller:
+  type: tmc_realtime_controllers/SetBoolCommandController
+  service_time_out: 1000
+
+tmc_trigger_command_controller:
+  type: tmc_realtime_controllers/TriggerCommandController
+  service_time_out: 1000
+  message_buffer_size: 32

@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <rosparam command="load" ns="test_ok"
+        file="$(find tmc_realtime_controllers)/test/test_ok.yaml" />
+    <rosparam command="load" ns="test_ko"
+        file="$(find tmc_realtime_controllers)/test/test_ko.yaml" />
+
+    <test test-name="diagnostic_controller_test" pkg="tmc_realtime_controllers" type="diagnostic_controller_test"/>
+</launch>

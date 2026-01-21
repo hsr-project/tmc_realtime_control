@@ -58,7 +58,7 @@ const size_t kHandleCount = 2;  //!/ Number of handles to register
 class SetBoolCommandControllerTest : public ::testing::Test {
  public:
   SetBoolCommandControllerTest() : controller_nh_("test_ok/tmc_set_bool_command_controller") {
-    // Registration of handles and creation of corresponding publishers
+    // Register handle and create corresponding publisher
     for (size_t i = 0; i < kHandleCount; i++) {
       // Topic name is "set_bool*"
       names_[i] = "/set_bool";
@@ -73,13 +73,13 @@ class SetBoolCommandControllerTest : public ::testing::Test {
   ros::NodeHandle root_nh_;                                         //!/ root_nh
   ros::NodeHandle controller_nh_;                                   //!/ controller_nh
   tmc_hardware_interface::SetBoolCommandInterface set_bool_iface_;  //!/ Interface
-  bool is_call_service_;                //!/ Flag that is set when CallServices completes
-  boost::mutex is_call_service_mutex_;  //!/ Mutex for is_call_service_ flag
+  bool is_call_service_;                //!/ Flag raised when CallServices completes
+  boost::mutex is_call_service_mutex_;  //!/ Flag for is_call_service_
 
   boost::array<std::string, kHandleCount> names_;                                                //!/ Node names
-  boost::array<tmc_hardware_interface::SetBoolCommandHandle::Data, kHandleCount> handle_datas_;  //!/ Data for handle
-  boost::array<std_srvs::SetBool, kHandleCount> service_messages_;  //!/ Messages for services
-  boost::array<ros::ServiceClient, kHandleCount> service_clients_;  //!/ Opposing ServiceClients
+  boost::array<tmc_hardware_interface::SetBoolCommandHandle::Data, kHandleCount> handle_datas_;  //!/ Data for Handle
+  boost::array<std_srvs::SetBool, kHandleCount> service_messages_;  //!/ Messages for service
+  boost::array<ros::ServiceClient, kHandleCount> service_clients_;  //!/ Opposing ServiceClient
 
   /**
    * @brief Handle state comparison
@@ -94,7 +94,7 @@ class SetBoolCommandControllerTest : public ::testing::Test {
   }
 
   /**
-   * @brief Comparison of responses
+   * @brief Comparison of response
    * @param[in] x Comparison target
    * @param[in] y Comparison target
    */
@@ -105,14 +105,14 @@ class SetBoolCommandControllerTest : public ::testing::Test {
 
   /**
    * @brief Helper for Init test
-   * Test to confirm handle values do not change when no service call is made
-   * Test to confirm handle flag is down when no service call is made
+   * Ensure Handle value does not change when there is no service call
+   * Test to confirm Handle flag is down when there is no service call
    * @param initial_value
    * @param controller
    */
   void InitTestHelper(const tmc_hardware_interface::SetBoolCommandHandle::Data& initial_value,
                       tmc_realtime_controllers::SetBoolCommandController& controller) {
-    ASSERT_TRUE(controller.init(&set_bool_iface_, root_nh_, controller_nh_)) << "Init should always succeed";
+    ASSERT_TRUE(controller.init(&set_bool_iface_, root_nh_, controller_nh_)) << "Init succeeds unconditionally";
     controller.starting(ros::Time::now());
 
     for (size_t i = 0; i < kHandleCount; i++) {
@@ -128,10 +128,10 @@ class SetBoolCommandControllerTest : public ::testing::Test {
   }
 
   /**
-   * @brief Helper to execute service call in a separate thread
-   * Test to confirm normal processing completion when service is called in a separate thread.
-   * The test will deadlock if this method is called without preparing an AsyncSpinner.
-   * Recommend using through the CallServices method, which also manages AsyncSpinner
+   * @brief Helper for making service calls in a separate thread
+   * Test to confirm service call in a separate thread completes successfully.
+   * Calling this method without preparing an asynchronous spinner will deadlock the test.
+   * Recommended to use via CallServices method which also manages asynchronous spinner
    *
    * @param[in] index Index of the service to call
    */
@@ -142,14 +142,14 @@ class SetBoolCommandControllerTest : public ::testing::Test {
   }
 
   /**
-   * @brief Helper to manage AsyncSpinner and execute service call in a separate thread
-   * After starting AsyncSpinner, execute service calls to multiple services specified by bits.
+   * @brief Helper for managing AsyncSpinner and making service calls in a separate thread
+   * After starting AsyncSpinner, make service calls to multiple services specified by bits.
    * This function waits until all service calls are completed,
-   * Caller should devise a way to call this function itself in a separate thread, etc.
-   * @param[in] bits Bit value of serviceClient to call (0 as lowest bit)
+   * Caller should call this function itself in a separate thread or similar.
+   * @param[in] bits Bit value of serviceClient to call (least significant bit is 0)
    */
   void CallServices(const uint32_t bits) {
-    ros::AsyncSpinner async_spinner((kHandleCount * 2) + 1);  // Spin spinner for callback resolution. For maximum services + spare 1
+    ros::AsyncSpinner async_spinner((kHandleCount * 2) + 1);  // Spin the spinner for callback resolution. Maximum number of services + 1 extra
     async_spinner.start();
 
     // Service call
@@ -160,17 +160,17 @@ class SetBoolCommandControllerTest : public ::testing::Test {
       }
     }
 
-    threads.join_all();  // Wait until all service calls complete
+    threads.join_all();  // Wait until all service calls are completed
   }
 
   /**
    * @brief Helper template for service test
-   * Test to call service and confirm handle flags are correctly set
-   * Custom Robot_hw processing for each test
-   * Specify serviceClient to call with bits.
-   * @param[in] bits Bit value of serviceClient to call (0 as lowest bit)
+   * Test to confirm handle flag is raised correctly after calling service
+   * Customize Robot_hw processing for each test
+   * Specify serviceClient to call by bit.
+   * @param[in] bits Bit value of serviceClient to call (least significant bit is 0)
    * @param[in] controller controller
-   * @param[in] func Processing that Robot_hw performs during execution
+   * @param[in] func Processing performed by Robot_hw during execution
    */
   void ServiceTestHelperBase(const uint32_t bits, tmc_realtime_controllers::SetBoolCommandController& controller,
                              boost::function<void(const size_t)> func) {
@@ -178,7 +178,7 @@ class SetBoolCommandControllerTest : public ::testing::Test {
 
     // Service call
     boost::thread call_thread(&SetBoolCommandControllerTest::CallServices, this, bits);
-    // Wait until service call completes
+    // Wait until service call is completed
     ros::Duration(0.1).sleep();
 
     // Transition to Processing with this Update
@@ -195,10 +195,10 @@ class SetBoolCommandControllerTest : public ::testing::Test {
       }
     }
 
-    // If handle_.has_request_ is down, transition to kResponsed
+    // Transition to kResponsed if handle_.has_request_ is down
     controller.update(ros::Time::now(), ros::Duration());
 
-    // Service completed, is_call_service_ goes down
+    // Service completed, is_call_service_ is down
     call_thread.join();
 
     // Transition to Standby
@@ -210,22 +210,22 @@ class SetBoolCommandControllerTest : public ::testing::Test {
    * @brief Helper for normal service call test
    * Robot_hw immediately lowers handle_.has_request_ flag
    *
-   * @param[in] bits Bit value of serviceClient to call (0 as lowest bit)
+   * @param[in] bits Bit value of serviceClient to call (least significant bit is 0)
    * @param[in] controller controller
    */
   void ServiceNomalTestHelper(const uint32_t bits, tmc_realtime_controllers::SetBoolCommandController& controller) {
     ServiceTestHelperBase(bits, controller, boost::bind(&SetBoolCommandControllerTest::NomalProcess, this, _1));
   }
   void NomalProcess(const size_t index) {
-    // In the normal case, lower the flag as processing completes
+    // Lower flag as processing is completed in normal case
     handle_datas_[index].has_request_ = false;
   }
 
   /**
    * @brief Helper for service call test during timeout
-   * Robot_hw waits for the Timeout time defined in ROS Param
+   * Robot_hw waits for the timeout duration defined in ROS Param
    *
-   * @param[in] bits Bit value of serviceClient to call (0 as lowest bit)
+   * @param[in] bits Bit value of serviceClient to call (least significant bit is 0)
    * @param[in] controller controller
    */
   void ServiceTimeoutTestHelper(const uint32_t bits, tmc_realtime_controllers::SetBoolCommandController& controller) {
@@ -243,9 +243,9 @@ class SetBoolCommandControllerTest : public ::testing::Test {
 
   /**
    * @brief Helper for service multiple call test
-   * Test to see if error is returned immediately when calling the same service during Robot_hw update
+   * Test if calling the same service during Robot_hw update returns an immediate error
    *
-   * @param[in] bits Bit value of serviceClient to call (0 as lowest bit)
+   * @param[in] bits Bit value of serviceClient to call (least significant bit is 0)
    * @param[in] controller controller
    */
   void ServiceAlreadyUseTestHelper(const uint32_t bits,
@@ -253,7 +253,7 @@ class SetBoolCommandControllerTest : public ::testing::Test {
     ServiceTestHelperBase(bits, controller, boost::bind(&SetBoolCommandControllerTest::AlreadyUseProcess, this, _1));
   }
   void AlreadyUseProcess(const size_t index) {
-    // Message creation
+    // Create Message
     std_srvs::SetBool sb;
     sb.request.data = true;
     sb.response.success = true;
@@ -269,12 +269,12 @@ class SetBoolCommandControllerTest : public ::testing::Test {
     EXPECT_EQ(sb.response.success, false);
     EXPECT_STREQ(sb.response.message.c_str(), "This service is already in use.");
 
-    // Lower the flag as processing completes
+    // Lower flag as processing is completed
     handle_datas_[index].has_request_ = false;
   }
 };
 
-// Node initialization and controller initial value check
+// Check node initialization and controller initial values
 TEST_F(SetBoolCommandControllerTest, InitNomalTest) {
   boost::array<tmc_hardware_interface::SetBoolCommandHandle::Data, 2> init_values;
   init_values[0].response_ = false;
@@ -291,21 +291,21 @@ TEST_F(SetBoolCommandControllerTest, InitNomalTest) {
   }
 }
 
-// Failure of init when necessary Param does not exist
+// Init fails when required Param does not exist
 TEST_F(SetBoolCommandControllerTest, InitFailureTest_BadNamespace) {
   tmc_realtime_controllers::SetBoolCommandController set_bool_c;
   ros::NodeHandle bad_controller_nh("no_period_namespace");
   EXPECT_FALSE(set_bool_c.init(&set_bool_iface_, root_nh_, bad_controller_nh));
 }
 
-// Failure of init when invalid Param (0 or less)
+// Init fails when Param is invalid (0 or less)
 TEST_F(SetBoolCommandControllerTest, InitFailureTest_BadParam) {
   tmc_realtime_controllers::SetBoolCommandController set_bool_c;
   ros::NodeHandle bad_controller_nh("test_ko/tmc_set_bool_command_controller");
   EXPECT_FALSE(set_bool_c.init(&set_bool_iface_, root_nh_, bad_controller_nh));
 }
 
-// When there are two nodes, verify handle flags are set correctly during service call
+// When there are two nodes, the flag of the handle called by Service with proper allocation is raised
 TEST_F(SetBoolCommandControllerTest, ServiceNomalTest_Allocation) {
   tmc_hardware_interface::SetBoolCommandHandle::Data init_value;
   tmc_realtime_controllers::SetBoolCommandController set_bool_c;
@@ -345,7 +345,7 @@ TEST_F(SetBoolCommandControllerTest, ServiceNomalTest_ResponseData) {
   tmc_realtime_controllers::SetBoolCommandController set_bool_c;
   ASSERT_NO_FATAL_FAILURE(InitTestHelper(init_value, set_bool_c));
 
-  // Response test
+  // Test of response
   boost::array<bool, 2> expect_bools = {true, false};
   BOOST_FOREACH (bool expect, expect_bools) {
     std::stringstream name;
@@ -360,10 +360,10 @@ TEST_F(SetBoolCommandControllerTest, ServiceNomalTest_ResponseData) {
     CompareResponse(service_messages_[0].response, sb.response);
   }
 
-  // Test is not conducted since message is fixed value
+  // Test is not conducted as message is a fixed value
 }
 
-// Automatically lower the flag when timeout occurs
+// Flag automatically drops when timeout occurs
 TEST_F(SetBoolCommandControllerTest, ServiceFailureTest_Timeout) {
   tmc_hardware_interface::SetBoolCommandHandle::Data init_value;
   tmc_realtime_controllers::SetBoolCommandController set_bool_c;
@@ -375,7 +375,7 @@ TEST_F(SetBoolCommandControllerTest, ServiceFailureTest_Timeout) {
   sb.response.message = "Hardware did not respond. Timeout";
   CompareResponse(service_messages_[0].response, sb.response);
 
-  // Confirm whether returning to normal state
+  // Confirm if it has returned to normal state
   sb.response.success = true;
   handle_datas_[0].response_ = true;
   sb.response.message = "OK";
@@ -383,7 +383,7 @@ TEST_F(SetBoolCommandControllerTest, ServiceFailureTest_Timeout) {
   CompareResponse(service_messages_[0].response, sb.response);
 }
 
-// Immediately returns error on the second service when another service call is made during service execution
+// When another service call is made during service execution, an immediate error is returned to the second service
 TEST_F(SetBoolCommandControllerTest, ServiceFailureTest_AlreadyInUse) {
   tmc_hardware_interface::SetBoolCommandHandle::Data init_value;
   tmc_realtime_controllers::SetBoolCommandController set_bool_c;
@@ -398,7 +398,7 @@ TEST_F(SetBoolCommandControllerTest, ServiceFailureTest_AlreadyInUse) {
   // ServiceAlreadyUseTestHelper(1, set_bool_c);
   // CompareResponse(service_messages_[0].response, sb.response);
 
-  // Confirm whether returning to normal state
+  // Confirm if it has returned to normal state
   ServiceNomalTestHelper(1, set_bool_c);
   CompareResponse(service_messages_[0].response, sb.response);
 }

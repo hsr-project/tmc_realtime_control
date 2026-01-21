@@ -7,14 +7,20 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(tmc_control_msgs REQUIRED)
 find_package(tmc_exxx_servo_motor_protocol REQUIRED)
 find_package(tmc_utils REQUIRED)
+find_package(urdf REQUIRED)
+
+find_package(fmt REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   src/${PROJECT_NAME}/digital_output_controller.cpp
   src/${PROJECT_NAME}/digital_input_controller.cpp
+  src/${PROJECT_NAME}/empty_command_controller.cpp
   src/${PROJECT_NAME}/exxx_drive_mode_controller.cpp
+  src/${PROJECT_NAME}/motion_command_limitter_controller.cpp
   src/${PROJECT_NAME}/servo_state_broadcaster.cpp
   src/${PROJECT_NAME}/infrequent_servo_access_controller.cpp
 )
@@ -32,9 +38,13 @@ ament_target_dependencies(${PROJECT_NAME}
   pluginlib
   realtime_tools
   std_msgs
+  std_srvs
   tmc_control_msgs
   tmc_exxx_servo_motor_protocol
+  tmc_utils
+  urdf
 )
+target_link_libraries(${PROJECT_NAME} fmt::fmt)
 
 pluginlib_export_plugin_description_file(controller_interface controllers_plugins.xml)
 
@@ -57,6 +67,9 @@ if(BUILD_TESTING)
   target_link_libraries(digital_output_controller_test ${PROJECT_NAME})
   ament_add_gtest(digital_input_controller_test test/digital_input_controller_test.cpp)
   target_link_libraries(digital_input_controller_test ${PROJECT_NAME})
+
+  ament_add_gtest(empty_command_controller_test test/empty_command_controller_test.cpp)
+  target_link_libraries(empty_command_controller_test ${PROJECT_NAME})
 
   ament_add_gtest(exxx_drive_mode_controller_test test/exxx_drive_mode_controller_test.cpp)
   ament_target_dependencies(${PROJECT_NAME}
@@ -98,6 +111,9 @@ if(BUILD_TESTING)
 
   target_link_libraries(infrequent_servo_access_controller_test ${PROJECT_NAME})
 
+  ament_add_gtest(motion_command_limitter_controller_test test/motion_command_limitter_controller_test.cpp
+                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+  target_link_libraries(motion_command_limitter_controller_test ${PROJECT_NAME})
 endif()
 
 
@@ -106,8 +122,12 @@ ament_export_dependencies(
   realtime_tools
   std_msgs
   tmc_control_msgs
+  tmc_utils
 )
 ament_export_libraries(
   ${PROJECT_NAME}
+)
+ament_export_include_directories(
+  include
 )
 ament_package()

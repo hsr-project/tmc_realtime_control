@@ -97,7 +97,7 @@ class DiagnosticControllerTest : public ::testing::Test {
         uint_value_(0),
         double_value_(0.0),
         string_value_() {
-    // Registration of handle and creation of corresponding subscriber
+    // Register handle and create corresponding subscriber
     for (size_t i = 0; i < kHandleCount; ++i) {
       levels_[i] = 0;
       messages_[i] = "";
@@ -138,7 +138,7 @@ class DiagnosticControllerTest : public ::testing::Test {
 
   /**
    * @brief Basic test for controller initialization
-   * Initialization of the controller using default params and calculation of duration
+   * Initialize the controller using default params and calculate duration
    * @param[out] controller controller
    * @param[out] duration Duration
    */
@@ -148,12 +148,12 @@ class DiagnosticControllerTest : public ::testing::Test {
 
     double rate;
     controller_nh_.getParam("publish_rate", rate);
-    duration = ros::Duration((1.0 / rate) * 2.0);  // Rest twice the publish_rate to ensure it is published
+    duration = ros::Duration((1.0 / rate) * 2.0);  // Sleep twice the publish_rate to ensure it is published
   }
 
   /**
    * @brief Test for one cycle of ros_controll1
-   * Wait for subscribe, update one cycle of controller1, and verify the update results
+   * Wait for subscribe, update controller1 cycle, and verify update results
    *
    * @param[in] expect_int Expected value of int_value
    * @param[in] expect_uint Expected value of uint_value
@@ -207,18 +207,18 @@ class DiagnosticControllerTest : public ::testing::Test {
   std::string string_value_;  //!/ string_value
 };
 
-// Confirm node initialization and controller initial values
+// Check node initialization and controller initial values
 TEST_F(DiagnosticControllerTest, InitNomalTest) {
   tmc_realtime_controllers::DiagnosticController diag_c;
 
   ASSERT_TRUE(diag_c.init(&diag_iface_, root_nh_, controller_nh_));
-  // Probably due to the thread impact of realtime_publisher
-  // A phenomenon occurs where the test itself fails when calling the destructor immediately in Jenkins
-  // Sleep is included to stabilize the test
+  // Probably due to the influence of the realtime_publisher thread
+  // A phenomenon occurs in Jenkins where the test itself fails if the destructor is called immediately
+  // Add sleep to stabilize the test
   ros::Duration(0.2).sleep();
 }
 
-// Initialization fails when publish_rate is not defined in ros param
+// Initialization fails if publish_rate is not defined in ros param
 TEST_F(DiagnosticControllerTest, InitFailureTest_BadNamespace) {
   tmc_realtime_controllers::DiagnosticController *diag_c;
   diag_c = new tmc_realtime_controllers::DiagnosticController();
@@ -226,7 +226,7 @@ TEST_F(DiagnosticControllerTest, InitFailureTest_BadNamespace) {
   EXPECT_FALSE(diag_c->init(&diag_iface_, root_nh_, bad_controller_nh));
 }
 
-// Initialization fails when publish_rate is 0 or less
+// Initialization fails if publish_rate is 0 or less
 TEST_F(DiagnosticControllerTest, InitFailureTest_BadParam) {
   tmc_realtime_controllers::DiagnosticController *diag_c;
   diag_c = new tmc_realtime_controllers::DiagnosticController();
@@ -234,7 +234,7 @@ TEST_F(DiagnosticControllerTest, InitFailureTest_BadParam) {
   EXPECT_FALSE(diag_c->init(&diag_iface_, root_nh_, bad_controller_nh));
 }
 
-// Normal case test
+// Normal test case
 TEST_F(DiagnosticControllerTest, SubscribeNomalTest) {
   tmc_realtime_controllers::DiagnosticController diag_c;
   ros::Duration duration;
@@ -248,7 +248,7 @@ TEST_F(DiagnosticControllerTest, SubscribeNomalTest) {
   }
 
   {
-    // Allocation of int_value_ is correct, and normal type conversion occurs
+    // Allocation of int_value_ is correct and normal type conversion is performed
     SCOPED_TRACE("int_value_");
     int_value_ = 1;
     SingleCycleTest("1", "0", "0", "", duration, diag_c);
@@ -257,7 +257,7 @@ TEST_F(DiagnosticControllerTest, SubscribeNomalTest) {
   }
 
   {
-    // Allocation of uint_value_ is correct, and normal type conversion occurs
+    // Allocation of uint_value_ is correct and normal type conversion is performed
     SCOPED_TRACE("uint_value_");
     uint_value_ = 1;
     SingleCycleTest("100", "1", "0", "", duration, diag_c);
@@ -266,7 +266,7 @@ TEST_F(DiagnosticControllerTest, SubscribeNomalTest) {
   }
 
   {
-    // Allocation of double_value_ is correct, and normal type conversion occurs
+    // Allocation of double_value_ is correct and normal type conversion is performed
     SCOPED_TRACE("double_value_");
     double_value_ = 1.5;
     SingleCycleTest("100", "100", "1.5", "", duration, diag_c);
@@ -278,7 +278,7 @@ TEST_F(DiagnosticControllerTest, SubscribeNomalTest) {
   }
 
   {
-    // Allocation of string_value_ is correct, and normal type conversion occurs
+    // Allocation of string_value_ is correct and normal type conversion is performed
     SCOPED_TRACE("string_value_");
     string_value_ = "test";
     SingleCycleTest("100", "100", "0", string_value_, duration, diag_c);
@@ -298,7 +298,7 @@ TEST_F(DiagnosticControllerTest, SubscribeAssertTest) {
   }
 
   {
-    // When the message exceeds the value at the time of buffer initialization,
+    // When the message exceeds the value at buffer initialization,
     // Only the buffer size is copied
     size_t reserved = diag_iface_.getHandle(names_[kIntIndex]).getMessageMaxLength();
     messages_[kIntIndex] = "12345678901234567890";

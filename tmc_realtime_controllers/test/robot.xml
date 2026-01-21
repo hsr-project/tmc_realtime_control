@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<robot name="robot">
+  <link name="parent_link"/>
+
+  <joint name="test_joint" type="revolute">
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    <axis xyz="0.0 0.0 1.0"/>
+    <parent link="parent_link"/>
+    <child link="child_link"/>
+    <limit effort="100.0" velocity="0.5" lower="-5.0" upper="5.0"/>
+  </joint>
+
+  <link name="child_link"/>
+</robot>

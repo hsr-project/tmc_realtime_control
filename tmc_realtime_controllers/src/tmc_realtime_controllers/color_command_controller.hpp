@@ -46,8 +46,8 @@ namespace tmc_realtime_controllers {
  * @brief Controller for ColorCommand
  * Controller class supporting multiple ColorCommandHandles
  *
- * Manages subscribers with names that match the handle names.
- * The update method overwrites the handle's value with the value from the last received topic each time it's called.
+ * Manages subscribers with the same name as the handle name.
+ * Each time the update method is called, the handle's value is overwritten with the value of the last received topic.
  */
 class ColorCommandController : public controller_interface::Controller<tmc_hardware_interface::ColorCommandInterface> {
  private:
@@ -62,7 +62,7 @@ class ColorCommandController : public controller_interface::Controller<tmc_hardw
     /**
      * @brief Structure to store commands
      *
-     * Made into a structure to hold the last received time
+     * Made it a structure to retain the last received time
      */
     struct Command {
       std_msgs::ColorRGBA color;
@@ -73,7 +73,7 @@ class ColorCommandController : public controller_interface::Controller<tmc_hardw
     /**
      * @brief Constructor
      * @param handle handle
-     * @param controller_nh NodeHandle for loading parameters
+     * @param controller_nh NodeHandle for parameter reading
      */
     StateSubscriber(const tmc_hardware_interface::ColorCommandHandle& handle, const ros::NodeHandle& controller_nh)
         : handle_(handle) {
@@ -96,13 +96,13 @@ class ColorCommandController : public controller_interface::Controller<tmc_hardw
     }
 
     /**
-     * @brief Callback method for subscribers
+     * @brief Callback method for subscriber
      * @param[in] msg msg
      */
     void CommandCallback(const std_msgs::ColorRGBA::ConstPtr& msg);
     /**
      * @brief Periodic update
-     * @param[in] time Calling time
+     * @param[in] time Call time
      */
     void Update(const ros::Time& time);
 
@@ -142,7 +142,7 @@ class ColorCommandController : public controller_interface::Controller<tmc_hardw
   virtual void stopping(const ros::Time& time);
 
  private:
-  std::vector<boost::shared_ptr<ColorCommandController::StateSubscriber> > state_subscribers_;  //!/ Managed list
+  std::vector<boost::shared_ptr<ColorCommandController::StateSubscriber> > state_subscribers_;  //!/ Management target list
 };
 }  // namespace tmc_realtime_controllers
 

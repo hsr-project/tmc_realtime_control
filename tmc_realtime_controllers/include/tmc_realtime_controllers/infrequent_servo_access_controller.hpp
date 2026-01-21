@@ -25,7 +25,7 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
-/// @brief Controller providing services for reading and writing parameters
+/// @brief Controller providing a service to read and write parameters
 #ifndef TMC_REALTIME_CONTROLLERS_INFREQUENT_SERVO_ACCESS_CONTROLLER_HPP_
 #define TMC_REALTIME_CONTROLLERS_INFREQUENT_SERVO_ACCESS_CONTROLLER_HPP_
 
@@ -45,7 +45,7 @@ DAMAGE.
 
 namespace tmc_realtime_controllers {
 
-// Controller providing services for reading and writing parameters
+// Controller providing a service to read and write parameters
 template <typename Type, typename SrvReq, typename SrvRes>
 class InfrequentServoAccessController : public controller_interface::ControllerInterface {
  public:
@@ -66,7 +66,7 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
       const rclcpp_lifecycle::State& previous_state) override;
 
-  // Initialization excluding ControllerInterface::init, for testing purposes
+  // Initialization of parts other than ControllerInterface::init, split for testing
   bool InitImpl();
 
  protected:
@@ -81,29 +81,29 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   virtual void ReadFromBuffer(uint32_t key_index, SrvRes& response) {}
   // Send commands
   virtual bool SetRequest(uint32_t joint_index) { return true; }
-  // Callback service for reading and writing parameters
+  // Callback for the service to read and write parameters
   void ServiceCallBack(const std::shared_ptr<SrvReq> request, const std::shared_ptr<SrvRes> response);
-  // Retrieve index of common parts.
+  // Get the index of the common part.
   void CommonGetIndex(std::string joint_name);
-  // Retrieve command interface of common parts.
+  // Get the command interface of the common part.
   void CommonCommandInterfaceConfiguration(
     std::string joint_name, controller_interface::InterfaceConfiguration& conf) const;
-  // Retrieve state interface of common parts.
+  // Get the state interface of the common part.
   void CommonStateInterfaceConfiguration(
     std::string joint_name, controller_interface::InterfaceConfiguration& conf) const;
 
-  // Service for reading and writing parameters
+  // Service to read and write parameters
   typename rclcpp::Service<Type>::SharedPtr parameter_srv_;
-  // Storage for control table information
+  // For storing control table information
   tmc_exxx_servo_motor_protocol::ControlTable control_table_;
   // Node for service
   rclcpp::Node::SharedPtr srv_node_;
 
-  // Attribute type of controller
+  // Controller attribute type
   std::string attribute_;
-  // Group of joint names
+  // Joint names
   std::vector<std::string> joint_names_;
-  // Keys denying access
+  // Keys to deny access
   std::vector<std::string> denied_keys_;
   // Controller name
   std::string controller_name_;
@@ -118,32 +118,32 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   std::vector<std::optional<uint32_t>> state_is_success_index_;
 
 
-  // Request content
+  // Content of the request
   realtime_tools::RealtimeBuffer<uint32_t> request_joint_index_;
   realtime_tools::RealtimeBuffer<std::string> request_key_;
   realtime_tools::RealtimeBuffer<double> request_value_;
   realtime_tools::RealtimeBuffer<bool> request_is_success_;
 
-  // Request status
+  // State of the request
   enum RequestState {
     kNoRequest,
     kRequestSend,
     kRequestDone,
   } request_state_;
-  // For changing request status
+  // For changing the state of the request
   boost::mutex request_lock_;
 
-  // Check if request status matches target status
+  // Check if the state of the request is the target state
   bool CheckRequestStateFromNonRT(RequestState target);
-  // Check if request status matches target status
+  // Check if the state of the request is the target state
   bool CheckRequestStateFromRT(RequestState target);
-  // Modify request status
+  // Rewrite the state of the request
   void UpdateRequestStateFromNonRT(RequestState target);
-  // Modify request status
+  // Rewrite the state of the request
   bool UpdateRequestStateFromRT(RequestState target);
 };
 
-// Controller for reading parameters
+// Controller to read parameters
 class InfrequentReadingController
     : public InfrequentServoAccessController<tmc_control_msgs::srv::ReadParameters,
                                              tmc_control_msgs::srv::ReadParameters::Request,

@@ -60,7 +60,7 @@ class DigitalInputControllerTest :public ::testing::Test {
     // test probe node
     client_node_ = rclcpp::Node::make_shared("client");
     subscription_ = client_node_->create_subscription<std_msgs::msg::Bool>(
-      kStateTopicName, rclcpp::SystemDefaultsQoS(),
+      kStateTopicName, rclcpp::QoS(1).best_effort(),
       std::bind(&DigitalInputControllerTest::TopicCallback, this, _1));
   }
 
@@ -241,5 +241,37 @@ TEST_F(DigitalInputControllerTest, PublishInverseState) {
   WaitForState(true);
   EXPECT_TRUE(received_state_msg_.data);
 }
+
+TEST_F(DigitalInputControllerTest, QosBestEffort) {
+  LaunchController({
+    rclcpp::Parameter(
+      "state_interface_name", std::string(kStateInterfacePrefix) + "/" + std::string(kStateInterfaceBaseName)),
+    rclcpp::Parameter(
+      "topic_name", kStateTopicName),
+    rclcpp::Parameter(
+      "inverse_mode", true),
+    rclcpp::Parameter(
+      "qos_reliability", "BEST_EFFORT")},
+    false);
+  WaitForPublisher();
+
+  auto topic_infos = client_node_->get_publishers_info_by_topic(kStateTopicName);
+  for (const auto& topic_info : topic_infos) {
+    auto result = topic_info.qos_profile().reliability();
+    EXPECT_EQ(result, rclcpp::ReliabilityPolicy::BestEffort);
+  }
+}
+
+TEST_F(DigitalInputControllerTest, QosReliable) {
+  LaunchDefaultController();
+  WaitForPublisher();
+
+  auto topic_infos = client_node_->get_publishers_info_by_topic(kStateTopicName);
+  for (const auto& topic_info : topic_infos) {
+    auto result = topic_info.qos_profile().reliability();
+    EXPECT_EQ(result, rclcpp::ReliabilityPolicy::Reliable);
+  }
+}
+
 
 }  // namespace tmc_realtime_controllers

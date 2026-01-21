@@ -58,7 +58,7 @@ controller_interface::return_type ServoStateBroadcaster::init(const std::string&
 
 bool ServoStateBroadcaster::InitImpl() {
   joint_names_ = GetParameter(get_node(), "joints", std::vector<std::string>({ "" }));
-  // If the joints cannot be obtained, respond with an error.
+  // If joints cannot be obtained, respond with an error.
   if (joint_names_.size() == 0) {
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "joints parameter is empty");
     return false;

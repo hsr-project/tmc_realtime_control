@@ -2,6 +2,16 @@
 Changelog for package tmc_control_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.2.0 (2025-12-04)
+-------------------
+* Add EmptyCommandController.
+* Unify parameter retrieval behavior to return false instead of throwing exceptions.
+* Multi-axis support in MotionCommandLimitterController.
+* Make the velocity and acceleration limits dynamic parameters.
+* Add MotionCommandLimitterController
+* Update DigitalInputController to use RealtimePublisher.
+* Contributors: Keisuke Takeshita
+
 2.1.0 (2025-04-22)
 -------------------
 * Add PowerECU

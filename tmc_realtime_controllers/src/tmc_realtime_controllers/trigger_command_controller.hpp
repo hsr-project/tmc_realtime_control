@@ -37,14 +37,14 @@ namespace tmc_realtime_controllers {
  * @brief Controller for SetBoolCommandHandle
  * Controller class supporting multiple handles
  *
- * Create a service under the name "[Handle name]".
+ * Create a service with the name "[Handle Name]".
  */
 typedef tmc_realtime_controllers::CommandServiceController<tmc_hardware_interface::TriggerCommandInterface,
                                                            std_srvs::Trigger>
     TriggerCommandController;
 
 /**
- * @brief Trigger Handle to RosMessage conversion function
+ * @brief Handle to RosMessage conversion function for Trigger
  * @param[in] res HandleResponse
  * @param[out] ros_res ROSResponse
  */

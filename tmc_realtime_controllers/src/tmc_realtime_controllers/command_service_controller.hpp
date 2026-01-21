@@ -47,12 +47,12 @@ DAMAGE.
 namespace tmc_realtime_controllers {
 /**
  * @brief Controller for CommandHandle
- * Superclass handling multiple handles
+ * Superclass supporting multiple handles
  *
  * Create a service with the name "[Handle Name]".
- * Update the handle's value only once when a call is received by the service.
+ * Update the value of Handle only once when a call comes to the service.
  *
- * Create a subclass according to the type of service being used.
+ * Create a subclass according to the type of service to be used.
  */
 template <class HardwareInterface, class ROSService>
 class CommandServiceController : public controller_interface::Controller<HardwareInterface> {
@@ -72,27 +72,27 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
 
   /**
    * @brief Command state transition
-   * The actors related to state transition are the following three:
+   * The actors involved in the state transition are the following three parties
    * - CommandService
-   *   Entry point for ROSService calls, manages state transition flags
+   *   Gateway for ROSService calls, management of state transition flags
    * - Controller (calls CommandService::Update())
-   *   Manages state transition flags and rewrites handle
+   *   Management of state transition flags, rewriting of handle
    * - robotHw
-   *   Communication management with the actual device
+   *   Communication management with the actual machine
    *
-   * Variables used for communication among actors are shown below.
+   * Variables used for communication between actors are shown below.
    * -------------------------------------------------
    *  CommandService <- -> Controller <- -> robotHw
    *                   A                A
-   * State flag | state_ | handle_.has_request
+   * State flag | state_            | handle_.has_request
    * Request    | request_          | handle_.request_
    * Response   | response_         | handle_.response_
    * -------------------------------------------------
    *
    * State transition rules
-   * - State transition is performed by CommandService and Controller. Exclusive control is done using mutex.
+   * - State transitions are performed by CommandService and Controller. Exclusive control using mutex is performed.
    * - Only Controller can operate handle_.
-   * - Variables other than state_ are designed in a way that logically does not require exclusive control
+   * - Variables other than state_ are designed to not require exclusive control logically
    *
    * The command state transition diagram is shown below.
    * -------------------------------------------------------------------------------
@@ -103,44 +103,44 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
    *                                                    +--(timeout)--+
    * -------------------------------------------------------------------------------
    *
-   * Details of each state's operation are shown below.
+   * Detailed operation of each state is shown below.
    *
-   * kStandBy: Service standby state
-   *   State accepting service calls.
-   *   To prevent accepting multiple service calls simultaneously, CommandService performs exclusive control
+   * kStandBy : Service standby state
+   *   State that accepts service calls.
+   *   CommandService performs exclusive control to prevent multiple service calls simultaneously
    * - CommandService
-   *   Receive service request and transition to kRequested
+   *   Receives service requests and transitions to kRequested
    * - Controller
    *   Keep the handle_.has_request_ flag Off.
    * - robotHw
    *   Standby
    *
-   * kRequested: Start of service processing
-   *   State receiving service calls
+   * kRequested : Service processing start
+   *   State that has accepted a service call
    * - CommandService
-   *   Poll and wait until kResponded | kTimeout
+   *   Polling and waiting until kResponded|kTimeout
    * - Controller
-   *   Turn On the handle_.has_request_ flag.
+   *   Turn the handle_.has_request_ flag On.
    *   Transition the state to kProcessing.
    * - robotHw
    *   Standby
    *
-   * kProcessing: robotHw processing
+   * kProcessing : robotHw processing
    *   State where RobotHW performs processing
    * - CommandService
-   *   Poll and wait until kResponded | kTimeout
+   *   Polling and waiting until kResponded|kTimeout
    * - Controller
-   *   Poll and confirm until the handle.has_request_ flag drops
+   *   Polling and confirming until the handle.has_request_ flag drops
    *   If the flag has dropped, transition to kResponsed state
-   *   If the timeout period has passed, drop the handle_.has_request_ flag,
+   *   If the timeout time has passed, drop the handle_.has_request_ flag,
    *   Transition to kResponsed state
    * - robotHw
    *   Perform processing.
-   *   Upon completion, drop the HasRequest flag
+   *   Drop the HasRequest flag upon completion
    *
-   * kResponsed: Send results to the service source
+   * kResponsed : Send results to the service originator
    * - CommandService
-   *   Send Response and Message back to the service caller
+   *   Reply Response and Message to the service caller
    *   Transition to kStandBy
    * - Controller
    *   Standby
@@ -150,22 +150,22 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
    */
   enum CommandState {
     kStandBy,     //!/ Service standby state
-    kRequested,   //!/ Service request received
+    kRequested,   //!/ Service request acceptance
     kProcessing,  //!/ robotHw processing
-    kResponded,   //!/ robotHw processing completed, send results back to service caller
+    kResponded,   //!/ robotHw processing complete, result reply to service caller
     kTimeout      //!/ robotHw timeout
   };
 
   /**
-   * @brief Necessary items for managing a single Handle
+   * @brief Set of necessary items for managing a single Handle
    */
   class CommandService : boost::noncopyable {
    private:
-    // Handle and ROS message conversion
+    // Conversion between Handle and ROS message
     // Specialize this template
     /**
      * @brief Default RosMessage→Handle conversion function
-     * By default, it does nothing; specialize this function if conversion processing is required
+     * Since nothing is done by default, specialize this function if conversion processing is performed
      * @param[in] ros_req ROSRequest
      * @param[out] req HandleRequest
      */
@@ -175,7 +175,7 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
     }
     /**
      * @brief Default Handle→RosMessage conversion function
-     * By default, it does nothing; specialize this function if conversion processing is required
+     * Since nothing is done by default, specialize this function if conversion processing is performed
      * @param[in] res HandleResponse
      * @param[out] ros_res ROSResponse
      */
@@ -184,9 +184,9 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
       (void)res;
     }
     /**
-     * @brief Default RosMessage creation function for TimeOut
-     * Assumes the existence of a member called 'message' of type std::string
-     * If separate creation processing is defined, specialize this function
+     * @brief Default RosMessage creation function at TimeOut
+     * Assumes the existence of a member called message of type std::string
+     * If a separate creation process is defined, specialize this function
      * @param[out] ros_res ROSResponse
      */
     void SetTimeoutResponse(ROSResponse& ros_res) {
@@ -220,8 +220,8 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
      */
     bool CommandCallback(ROSRequest& ros_req, ROSResponse& ros_res) {
       // kStandBy
-      // Change to simple lock (wait until finished if there are simultaneous calls)
-      // Low likelihood of simultaneous calls, and don't want to write error handling for failed simultaneous calls at the upper level
+      // Change to simple lock (wait until completion if there are simultaneous calls)
+      // Low possibility of simultaneous calls and do not want to write error handling for failure due to simultaneous calls at a higher level
       boost::lock_guard<boost::mutex> service_lock(service_mutex_);
 
       start_time_ = ros::Time::now();
@@ -234,7 +234,7 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
       }
 
       // kRequested, kProcessing
-      //// Poll until kResponded state
+      //// Polling until kResponded state
       while (true) {
         {
           boost::lock_guard<boost::mutex> lock(state_mutex_);
@@ -261,7 +261,7 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
     }
 
     void Update() {
-      // Try lock in real-time layer
+      // Attempt lock in real-time layer
       boost::unique_lock<boost::mutex> lock(state_mutex_, boost::try_to_lock);
       if (!lock) {
         return;
@@ -275,15 +275,15 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
           state_ = kProcessing;
         case kProcessing:
           if (!handle_.hasRequest()) {
-            // Once HasRequest is dropped in robotHw (when processing is completed) read the result
+            // Read the result when HasRequest is dropped in robotHw (when processing is complete)
             handle_.getResponse(response_);
-            // Drop the request flag
+            // Drop request flag
             handle_.cancel();
             // Transition to kResponded state
             state_ = kResponded;
           } else if ((ros::Time::now() - start_time_) > service_time_out_) {
             // Timeout
-            handle_.cancel();  // Send processing stop
+            handle_.cancel();  // Send processing abort
             // Transition to kTimeout state
             state_ = kTimeout;
           }
@@ -295,13 +295,13 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
     }
 
    private:
-    ros::ServiceServer set_bool_server_;    //!/ Service for receiving reset command
+    ros::ServiceServer set_bool_server_;    //!/ Service for receiving reset commands
     ResourceHandle handle_;                 //!/ Handle
     ros::Rate polling_rate_;                //!/ Polling rate
-    const ros::Duration service_time_out_;  //!/ Service timeout period [ms]
+    const ros::Duration service_time_out_;  //!/ Service timeout duration [ms]
     CommandState state_;                    //!/ Service state
     boost::mutex service_mutex_;            //!/ Mutex to prevent simultaneous activation of CommandCallback
-    boost::mutex state_mutex_;              //!/ Mutex for state_ use
+    boost::mutex state_mutex_;              //!/ Mutex for state_
     ros::Time start_time_;                  //!/ Service processing start time
     HandleRequest request_;                 //!/ Request
     HandleResponse response_;               //!/ Response
@@ -363,7 +363,7 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
     (void)(time);  // unused
   }
   /**
-   * @brief Post-end processing
+   * @brief Post-completion processing
    * @param[in] time time
    */
   virtual void stopping(const ros::Time& time) {
@@ -371,7 +371,7 @@ class CommandServiceController : public controller_interface::Controller<Hardwar
   }
 
  private:
-  std::vector<boost::shared_ptr<CommandService> > command_services_;  //!/ Managed list
+  std::vector<boost::shared_ptr<CommandService> > command_services_;  //!/ List of managed targets
 };
 }  // namespace tmc_realtime_controllers
 #endif  // TMC_REALTIME_CONTROLLERS_TMC_COMMAND_SERVICE_CONTROLLER_HPP_

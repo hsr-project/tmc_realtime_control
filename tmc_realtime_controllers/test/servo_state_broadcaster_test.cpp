@@ -26,7 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 /// @file exxx_drive_mode_controller-test.cpp
-/// @brief Test of the controller that changes the drive mode
+/// @brief Test for the controller that changes the drive mode
 
 #include <gtest/gtest.h>
 
@@ -45,7 +45,7 @@ class ServoStateBroadcasterTest : public ::testing::Test {
     controller_node_ = controller_->get_node();
     controller_node_->declare_parameter<std::vector<std::string> >("joints", { "arm_lift_joint", "arm_flex_joint" });
 
-    // Set igain to zero to counteract the impact of update being called multiple times by WaitFor
+    // Set igain to zero to eliminate the effect of multiple calls to update with WaitFor
     controller_node_->declare_parameter<double>("publish_rate", 30.0);
 
     EXPECT_EQ(controller_->init(kControllerNodeName), controller_interface::return_type::OK);

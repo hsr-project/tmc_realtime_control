@@ -31,6 +31,7 @@ DAMAGE.
 #include <string>
 
 #include <controller_interface/controller_interface.hpp>
+#include <realtime_tools/realtime_publisher.hpp>
 #include <std_msgs/msg/bool.hpp>
 
 
@@ -59,6 +60,8 @@ class DigitalInputController : public controller_interface::ControllerInterface 
 
   // publisher
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr publisher_;
+  using RealtimePublisher = realtime_tools::RealtimePublisher<std_msgs::msg::Bool>;
+  std::unique_ptr<RealtimePublisher> realtime_publisher_;
 };
 
 }  // namespace tmc_realtime_controllers

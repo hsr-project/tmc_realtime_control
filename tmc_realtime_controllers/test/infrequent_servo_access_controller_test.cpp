@@ -25,7 +25,7 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
-/// @brief Test of the controller that provides a service to read and write parameters
+/// @brief Test of a controller that provides a service for reading and writing parameters
 
 #include <memory>
 #include <string>
@@ -140,7 +140,7 @@ class InfrequentControllerTest : public ::testing::Test {
   rclcpp::Client<tmc_control_msgs::srv::WriteParameters>::SharedPtr writer_param_srv_client_;
 };
 
-// Parameter write, joint name does not exist
+// Parameter writing, joint name does not exist
 TEST_F(InfrequentControllerTest, InvalidJointName) {
   tmc_control_msgs::msg::ServoParam key_value;
   key_value.key = "hoge";
@@ -162,12 +162,12 @@ TEST_F(InfrequentControllerTest, InvalidJointName) {
 
   EXPECT_FALSE(response.get()->success);
 
-  // Nothing has been written
+  // Nothing is written
   double tmp_value = writer_hardware_->writer_value[0]->command();
 
   EXPECT_DOUBLE_EQ(0.0, tmp_value);
 }
-// Parameter write, specify key that refuses writing
+// Parameter writing, specify key for write rejection
 TEST_F(InfrequentControllerTest, DeniedKey) {
   rclcpp::spin_some(writer_controller_node_->get_node_base_interface());
 
@@ -191,13 +191,13 @@ TEST_F(InfrequentControllerTest, DeniedKey) {
 
   EXPECT_FALSE(response.get()->success);
 
-  // Nothing has been written
+  // Nothing is written
   double tmp_value = writer_hardware_->writer_value[0]->command();
 
   EXPECT_DOUBLE_EQ(0.0, tmp_value);
 }
 
-// Parameter write, parameter does not exist
+// Parameter writing, parameter does not exist
 TEST_F(InfrequentControllerTest, InvalidParameterName) {
   auto request = std::make_shared<tmc_control_msgs::srv::WriteParameters::Request>();
   request->name = "JointA";
@@ -233,7 +233,7 @@ TEST_F(InfrequentControllerTest, InvalidParameterName) {
   EXPECT_FALSE(response.get()->success);
 }
 
-// Parameter write, there are parameters that cannot be read even after retry
+// Parameter writing, some parameters cannot be read even after retrying
 TEST_F(InfrequentControllerTest, WritingParameterFailure) {
   auto request = std::make_shared<tmc_control_msgs::srv::WriteParameters::Request>();
   request->name = "JointA";
@@ -294,7 +294,7 @@ TEST_F(InfrequentControllerTest, WritingParameterFailure) {
   EXPECT_FALSE(response.get()->success);
 }
 
-// Parameter write, normal case
+// Parameter writing, normal case
 TEST_F(InfrequentControllerTest, Normal) {
   auto request = std::make_shared<tmc_control_msgs::srv::WriteParameters::Request>();
   request->name = "JointA";
@@ -354,7 +354,7 @@ TEST_F(InfrequentControllerTest, Normal) {
   EXPECT_TRUE(response.get()->success);
 }
 
-// Parameter read, joint name does not exist
+// Parameter reading, joint name does not exist
 TEST_F(InfrequentControllerTest, ReadInvalidJointName) {
   tmc_control_msgs::msg::ServoParam key_value;
   auto request = std::make_shared<tmc_control_msgs::srv::ReadParameters::Request>();
@@ -373,7 +373,7 @@ TEST_F(InfrequentControllerTest, ReadInvalidJointName) {
   EXPECT_FALSE(response.get()->success);
 }
 
-// Parameter read, parameter does not exist
+// Parameter reading, parameter does not exist
 TEST_F(InfrequentControllerTest, ReadInvalidParameterName) {
   auto request = std::make_shared<tmc_control_msgs::srv::ReadParameters::Request>();
   request->name = "JointA";
@@ -418,7 +418,7 @@ TEST_F(InfrequentControllerTest, ReadInvalidParameterName) {
   EXPECT_DOUBLE_EQ(42.0, response_value->values[0].value);
 }
 
-// Parameter read, there are parameters that cannot be read even after retry
+// Parameter reading, some parameters cannot be read even after retrying
 TEST_F(InfrequentControllerTest, ReadingParameterFailure) {
   auto request = std::make_shared<tmc_control_msgs::srv::ReadParameters::Request>();
   request->name = "JointA";
@@ -468,7 +468,7 @@ TEST_F(InfrequentControllerTest, ReadingParameterFailure) {
   EXPECT_DOUBLE_EQ(42.0, response_value->values[0].value);
 }
 
-// Parameter read, normal case
+// Parameter reading, normal case
 TEST_F(InfrequentControllerTest, ReadNormal) {
   auto request = std::make_shared<tmc_control_msgs::srv::ReadParameters::Request>();
   request->name = "JointA";

@@ -54,7 +54,7 @@ class ColorCommandControllerTest : public ::testing::Test {
     std::fill(values_r_.begin(), values_r_.end(), 0.0);
     std::fill(values_g_.begin(), values_g_.end(), 0.0);
     std::fill(values_b_.begin(), values_b_.end(), 0.0);
-    // Register the handle and create the corresponding publisher
+    // Register handle and create corresponding publisher
     for (size_t i = 0; i < kHandleCount; i++) {
       // Topic name is "color*"
       names_[i] = "color";
@@ -77,14 +77,14 @@ class ColorCommandControllerTest : public ::testing::Test {
   boost::array<ros::Publisher, kHandleCount> publishers_;
 };
 
-// Initialize node and check initial values of the controller
+// Check node initialization and controller initial values
 TEST_F(ColorCommandControllerTest, InitNomalTest) {
   tmc_realtime_controllers::ColorCommandController color_c;
   EXPECT_TRUE(color_c.init(&coloriface_, root_nh_, controller_nh_)) << "initialize";
-  // Initialize controller
+  // Controller initialization
   color_c.starting(ros::Time::now());
   // Since the initial value is 0.0,
-  // For detection, set the receiving variable to a non-zero value
+  // Set the receiving variable to a non-zero value to detect
   for (size_t i = 0; i < kHandleCount; i++) {
     values_r_[i] = 1.0;
     values_g_[i] = 1.0;
@@ -103,9 +103,9 @@ TEST_F(ColorCommandControllerTest, InitNomalTest) {
   color_c.stopping(ros::Time::now());
 }
 
-// Test topic reception
+// Topic reception test
 TEST_F(ColorCommandControllerTest, PublishNomalTest_R) {
-  // Initialize controller
+  // Controller initialization
   tmc_realtime_controllers::ColorCommandController color_c;
   EXPECT_TRUE(color_c.init(&coloriface_, root_nh_, controller_nh_)) << "Initialization";
   color_c.starting(ros::Time::now());
@@ -175,7 +175,7 @@ TEST_F(ColorCommandControllerTest, PublishNomalTest_R) {
 }
 
 TEST_F(ColorCommandControllerTest, PublishNomalTest_G) {
-  // Initialize controller
+  // Controller initialization
   tmc_realtime_controllers::ColorCommandController color_c;
   EXPECT_TRUE(color_c.init(&coloriface_, root_nh_, controller_nh_)) << "Initialization";
   color_c.starting(ros::Time::now());
@@ -245,7 +245,7 @@ TEST_F(ColorCommandControllerTest, PublishNomalTest_G) {
 }
 
 TEST_F(ColorCommandControllerTest, PublishNomalTest_B) {
-  // Initialize controller
+  // Controller initialization
   tmc_realtime_controllers::ColorCommandController color_c;
   EXPECT_TRUE(color_c.init(&coloriface_, root_nh_, controller_nh_)) << "Initialization";
   color_c.starting(ros::Time::now());
@@ -314,9 +314,9 @@ TEST_F(ColorCommandControllerTest, PublishNomalTest_B) {
   }
 }
 
-// Test if the specified color is produced on timeout
+// Test if the specified color is set when a timeout occurs
 TEST_F(ColorCommandControllerTest, TestoutTest) {
-  // Initialize controller
+  // Controller initialization
   tmc_realtime_controllers::ColorCommandController color_c;
   EXPECT_TRUE(color_c.init(&coloriface_, root_nh_, controller_nh_)) << "Initialization";
   color_c.starting(ros::Time::now());
@@ -340,7 +340,7 @@ TEST_F(ColorCommandControllerTest, TestoutTest) {
     publishers_[i].publish(input[i]);
   }
 
-  // Update processing
+  // Update process
   ros::Duration(0.5).sleep();
   ros::spinOnce();
   color_c.update(ros::Time::now(), ros::Duration());
@@ -357,7 +357,7 @@ TEST_F(ColorCommandControllerTest, TestoutTest) {
   color_c.update(ros::Time::now(), ros::Duration());
 
   // Check timeout
-  // (0.5, 0.5, 0.5) specified as the timeout color is output
+  // The specified timeout color (0.5, 0.5, 0.5) is output
   for (size_t i = 0; i < kHandleCount; ++i) {
     EXPECT_DOUBLE_EQ(0.5, values_r_[i]);
     EXPECT_DOUBLE_EQ(0.5, values_g_[i]);

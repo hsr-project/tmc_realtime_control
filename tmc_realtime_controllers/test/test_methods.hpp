@@ -41,12 +41,12 @@ DAMAGE.
 #include <ros/ros.h>
 
 /**
- * @brief Test of the controller that sends messages from Publisher to handle
+ * @brief Test of the controller that sends messages from the Publisher to the handle
  *
  * @param[in] inputs Input values sent by the Publisher
- * @param[in] outputs Expected output value of the handle
+ * @param[in] outputs Expected output values of the Handle
  * @param[in] publishers Publisher
- * @param[in] values Destination for rewriting the handle
+ * @param[in] values Destination for rewriting the Handle
  * @param[in] controller ros_controller
  */
 template <typename InputType, typename OutputType, size_t Size>
@@ -59,18 +59,18 @@ void RunOutputInterfaceTest(const boost::array<InputType, Size>& inputs, const b
     return;
   }
 
-  // Transmission
+  // Send
   for (size_t i = 0; i < Size; ++i) {
     publishers[i].publish(inputs[i]);
   }
 
-  // Update processing
+  // Update process
   ros::Duration(0.5).sleep();
   ros::spinOnce();
   controller->update(ros::Time::now(), ros::Duration());
   ros::spinOnce();
 
-  // Check results
+  // Result verification
   for (size_t i = 0; i < Size; ++i) {
     std::stringstream sst;
     sst << "index : " << i;
@@ -85,7 +85,7 @@ void RunOutputInterfaceTest(const boost::array<InputType, Size>& inputs, const b
 }
 
 /**
- * @brief Class for Subscriber and receiving value management
+ * @brief Subscriber and received value management class
  */
 template <typename OutputType>
 class StateSubscriber {
@@ -116,10 +116,10 @@ class StateSubscriber {
 };
 
 /**
- * @brief Test to receive values of the handle with Subscriber
+ * @brief Test to receive handle values with Subscriber
  *
- * @param[in] inputs Input values to set to values
- * @param[in] outputs Expected output value of subscribe_datas
+ * @param[in] inputs Input values to set in values
+ * @param[in] outputs Expected output values of subscribe_datas
  * @param[in] duration Waiting time
  * @param[in] values values
  * @param[in] subscribe_datas subscribe_datas

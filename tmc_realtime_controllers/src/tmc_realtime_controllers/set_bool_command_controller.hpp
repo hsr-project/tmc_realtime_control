@@ -36,9 +36,9 @@ DAMAGE.
 namespace tmc_realtime_controllers {
 /**
  * @brief Controller for SetBoolCommandHandle
- * Controller class supporting multiple handles
+ * Controller class that supports multiple handles
  *
- * Create a service with the name "[handle name]".
+ * Create a service with the name "[Handle Name]".
  */
 // Ensure that the HardwareInterface passed to the controller is an actual class, not a template class
 typedef CommandServiceController<tmc_hardware_interface::SetBoolCommandInterface, std_srvs::SetBool>

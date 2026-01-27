@@ -87,7 +87,7 @@ class ServoStateBroadcaster : public controller_interface::ControllerInterface {
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
       const rclcpp_lifecycle::State& previous_state) override;
 
-  // Initialization of parts other than ControllerInterface::init, separation for testing
+  // Initialization of parts other than ControllerInterface::init, division for testing
   bool InitImpl();
 
  private:

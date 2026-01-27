@@ -41,18 +41,18 @@ DAMAGE.
 #include <tmc_hardware_interface/diagnostic_interface.hpp>
 
 // TODO(kitsunai): テスト内容
-// Basic test consisting of two handles with one key value each, and testing publishing
-// Assign types to key value (int, uint, double, string)
-// Test default conversion (when buffer is exceeded, etc.)
+// Use two handles with 1 key value as the basic form for the publish test
+// Assign types to key values (int, uint, double, string)
+// Test of default conv (when buffer is exceeded, etc.)
 
 namespace tmc_realtime_controllers {
 /**
  * @brief Controller for DiagnosticInterface
  * Controller class supporting multiple DiagnosticHandles
  *
- * Consolidates KeyValue from multiple handles, and publishes topics from the publisher named "/diagnostics".
- * Publisher sends topics at 1 [Hz].
- * To change the publication cycle, modify the "publish_rate" ros param.
+ * Combines KeyValues of multiple handles into one and publishes topics from a publisher named "/diagnostics".
+ * The publisher sends topics at 1[Hz].
+ * To change the publishing rate, modify the "publish_rate" in ros param.
  */
 class DiagnosticController : public controller_interface::Controller<tmc_hardware_interface::DiagnosticInterface> {
  public:
@@ -85,9 +85,9 @@ class DiagnosticController : public controller_interface::Controller<tmc_hardwar
  private:
   std::vector<tmc_hardware_interface::DiagnosticHandle> handles_;                  //!/ List of handles
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> publisher_;  //!/ Publisher
-  ros::Time last_published_time_;                                                  //!/ Time of last publish
-  double publish_rate_;                                                            //!/ Publication cycle [Hz]
-  double expected_publish_time_;                                                   //!/ Publication cycle [sec]
+  ros::Time last_published_time_;                                                  //!/ Last published time
+  double publish_rate_;                                                            //!/ Publishing rate [Hz]
+  double expected_publish_time_;                                                   //!/ Publishing period [sec]
 };
 }  // namespace tmc_realtime_controllers
 #endif  // TMC_REALTIME_CONTROLLERSTMC_DIAGNOSTIC_CONTROLLER_HPP_

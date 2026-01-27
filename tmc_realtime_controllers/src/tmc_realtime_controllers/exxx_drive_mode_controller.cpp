@@ -48,7 +48,7 @@ namespace {
 const int kDriveModeTick = 10;
 /// Timeout for mode switching
 const double kRequestTimeout = 10.0;
-/// Default issuance rate of mode [Hz]
+/// Default issue rate of mode [Hz]
 const double kDefalutPublishRate = 10.0;
 
 }  // unnamed namespace
@@ -131,8 +131,8 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
     }
   }
 
-  // Progress request status in the order of Send->Receive->Done
-  // Service side checks for state transition after becoming Done
+  // Progress the request state in the order of Send->Receive->Done
+  // The service side checks the state transition after it becomes Done
   {
     boost::mutex::scoped_lock lock(request_lock_, boost::try_to_lock);
     if (lock) {
@@ -144,7 +144,7 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
     }
   }
 
-  // Send request if not empty
+  // Send the request if it is not empty
   if (!request_buffer_.readFromRT()->empty()) {
     for (ExxxDriveMode drive_mode : *request_buffer_.readFromRT()) {
       std::optional<uint32_t> command_drive_mode_index = 0;
@@ -159,7 +159,7 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
       boost::mutex::scoped_lock lock(request_lock_, boost::try_to_lock);
       if (lock) {
         request_state_ = kRequestSend;
-        // Reset request to empty
+        // Reset the request to empty
         std::vector<tmc_control_msgs::msg::ExxxDriveMode> empty;
         request_buffer_.writeFromNonRT(empty);
       }
@@ -217,7 +217,7 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn ExxxDr
 void ExxxDriveModeController::ChangeDriveModeCallBack(
     const std::shared_ptr<tmc_control_msgs::srv::ChangeExxxDriveMode::Request> request,
     const std::shared_ptr<tmc_control_msgs::srv::ChangeExxxDriveMode::Response> response) {
-  // Immediate failure if requested handle does not contain a request
+  // Immediate failure if the request is not in the registered handle
   std::vector<std::string> joints = joint_names_;
   for (ExxxDriveMode command_mode : request->drive_mode_request.drive_modes) {
     if (std::find(joints.begin(), joints.end(), command_mode.joint) == joints.end()) {
@@ -227,7 +227,7 @@ void ExxxDriveModeController::ChangeDriveModeCallBack(
     }
   }
 
-  // Communicate request to the real-time side
+  // Convey the request to the real-time side
   request_buffer_.writeFromNonRT(request->drive_mode_request.drive_modes);
 
   // Wait until the new drive_mode is expected to arrive
@@ -238,7 +238,7 @@ void ExxxDriveModeController::ChangeDriveModeCallBack(
   }
   rclcpp::Time start = get_node()->get_clock()->now();
   // Wait until request_state_ becomes Done
-  // End in failure if timeout occurs
+  // End with failure if it times out
   while (is_not_request_done) {
     rclcpp::Time now = get_node()->get_clock()->now();
     if ((now.seconds() - start.seconds()) > kRequestTimeout) {
@@ -261,12 +261,12 @@ void ExxxDriveModeController::ChangeDriveModeCallBack(
     request_state_ = kNoRequest;
   }
 
-  // Confirm whether drive_mode was changed as requested
+  // Check if the drive_mode was changed as requested
   std::vector<ExxxDriveMode> drive_modes =
     *drive_modes_buffer_.readFromNonRT();
   bool success = true;
   bool found = false;
-  // Confirm if request matches the current state
+  // Check if the request matches the current state
   for (ExxxDriveMode command_mode : request->drive_mode_request.drive_modes) {
     found = false;
     for (ExxxDriveMode current_mode : drive_modes) {

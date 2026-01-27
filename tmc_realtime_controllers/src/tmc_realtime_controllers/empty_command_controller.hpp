@@ -27,29 +27,42 @@ DAMAGE.
 */
 #ifndef TMC_REALTIME_CONTROLLERSTMC_EMPTY_COMMAND_CONTROLLER_HPP_
 #define TMC_REALTIME_CONTROLLERSTMC_EMPTY_COMMAND_CONTROLLER_HPP_
-#include <std_srvs/Empty.h>
 
-#include <tmc_hardware_interface/empty_command_interface.hpp>
-#include "command_service_controller.hpp"
+#include <string>
+
+#include <controller_interface/controller_interface.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 namespace tmc_realtime_controllers {
-/**
- * @brief Controller for EmptyCommandHandle
- * Controller class supporting multiple handles
- *
- * Create a service with the name "[handle name]".
- */
-// Ensure the HardwareInterface passed to the controller is a real class, not a template class
-// https://github.com/ros-controls/ros_controllers/blob/kinetic-devel/joint_trajectory_controller/src/joint_trajectory_controller.cpp#L42
-typedef CommandServiceController<tmc_hardware_interface::EmptyCommandInterface, std_srvs::Empty> EmptyCommandController;
 
-/**
- * @brief Function for creating RosMessage for TimeOut for Empty
- * @param[out] ros_res ROSResponse
- */
-template <>
-void EmptyCommandController::CommandService::SetTimeoutResponse(std_srvs::Empty::Response& ros_res) {
-  (void)ros_res;
-}
+class EmptyCommandController : public controller_interface::ControllerInterface {
+ public:
+  EmptyCommandController() = default;
+  virtual ~EmptyCommandController() = default;
+
+  controller_interface::CallbackReturn on_init() override;
+
+  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+
+  controller_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
+  controller_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  controller_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+
+  controller_interface::return_type update(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+
+ private:
+  std::string command_interface_name_;
+  double command_value_;
+
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_;
+  void Callback(const std_srvs::srv::Empty::Request::SharedPtr request,
+                const std_srvs::srv::Empty::Response::SharedPtr response);
+
+  std::mutex command_mutex_;
+  bool has_command_;
+};
+
 }  // namespace tmc_realtime_controllers
+
 #endif  // TMC_REALTIME_CONTROLLERSTMC_EMPTY_COMMAND_CONTROLLER_HPP_

@@ -26,7 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 /// @file exxx_drive_mode_controller-test.cpp
-/// @brief Test for controllers that change drive mode
+/// @brief Test for the controller that changes the drive mode
 
 #include <gtest/gtest.h>
 
@@ -75,6 +75,24 @@ class ExxxDriveModeControllerTest : public ::testing::Test {
     }
   }
 
+  tmc_control_msgs::msg::JointExxxDriveMode WaitForDriveModeMessage() {
+    tmc_control_msgs::msg::JointExxxDriveMode msg;
+    std::function<void(const tmc_control_msgs::msg::JointExxxDriveMode::SharedPtr)> callback =
+        [&msg](const tmc_control_msgs::msg::JointExxxDriveMode::SharedPtr message) { msg = *message; };
+    auto subscription = client_node_->create_subscription<tmc_control_msgs::msg::JointExxxDriveMode>(
+        "drive_mode", 1, callback);
+    for (auto i = 0; i < 100; ++i) {
+      EXPECT_EQ(controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.1)),
+                controller_interface::return_type::OK);
+      rclcpp::spin_some(client_node_);
+      if (msg.drive_modes.size() > 0) {
+        return msg;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    return msg;
+  }
+
  protected:
   TestableExxxDriveModeController::Ptr controller_;
   std::thread spinner_;
@@ -87,17 +105,8 @@ class ExxxDriveModeControllerTest : public ::testing::Test {
   rclcpp::Client<tmc_control_msgs::srv::ChangeExxxDriveMode>::SharedPtr change_mode_srv_client_;
 };
 TEST_F(ExxxDriveModeControllerTest, CheckPublication) {
-  // Waiting for subscription
-  tmc_control_msgs::msg::JointExxxDriveMode msg;
-  bool is_successful = false;
-
-  for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(controller_->update(controller_->get_node()->now(), rclcpp::Duration::from_seconds(0.1)),
-              controller_interface::return_type::OK);
-    if (rclcpp::wait_for_message(msg, client_node_, "drive_mode", std::chrono::milliseconds(100))) {
-      break;
-    }
-  }
+  // Waiting for subscribe
+  const auto msg = WaitForDriveModeMessage();
   ASSERT_EQ(2, msg.drive_modes.size());
   EXPECT_EQ("arm_lift_joint", msg.drive_modes[0].joint);
   EXPECT_EQ("arm_flex_joint", msg.drive_modes[1].joint);
@@ -106,14 +115,12 @@ TEST_F(ExxxDriveModeControllerTest, CheckPublication) {
 }
 TEST_F(ExxxDriveModeControllerTest, CheckServiceSuccess) {
   auto request = std::make_shared<tmc_control_msgs::srv::ChangeExxxDriveMode::Request>();
-  tmc_control_msgs::msg::JointExxxDriveMode msg;
-
   request->drive_mode_request.drive_modes.resize(1);
   request->drive_mode_request.drive_modes[0].joint = "arm_lift_joint";
   request->drive_mode_request.drive_modes[0].value = 2;
   auto response = change_mode_srv_client_->async_send_request(request);
   hardware_->drive_mode[0]->set_current(2.0);
-  // Execute wait for service.
+  // Perform service wait.
   do_interrupt_ = false;
   spinner_ = std::thread(
       std::bind(&ExxxDriveModeControllerTest::spin_some_thread, this, controller_node_->get_node_base_interface()));
@@ -123,24 +130,15 @@ TEST_F(ExxxDriveModeControllerTest, CheckServiceSuccess) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
-  // Execute wait for topic.
+  // Perform topic wait.
   do_interrupt_ = true;
   spinner_.join();
 
-  for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(controller_->update(controller_node_->now(), rclcpp::Duration::from_seconds(0.1)),
-              controller_interface::return_type::OK);
-    if (rclcpp::wait_for_message(msg, client_node_, "drive_mode", std::chrono::milliseconds(100))) {
-      if ( msg.drive_modes.size() == 2 ) {
-        break;
-      }
-    }
-  }
-
   ASSERT_TRUE(rclcpp::spin_until_future_complete(client_node_, response) == rclcpp::FutureReturnCode::SUCCESS);
   std::shared_ptr<tmc_control_msgs::srv::ChangeExxxDriveMode::Response> response_value = response.get();
-
   ASSERT_TRUE(response_value->success);
+
+  const auto msg = WaitForDriveModeMessage();
   ASSERT_EQ(2, msg.drive_modes.size());
   EXPECT_EQ("arm_lift_joint", msg.drive_modes[0].joint);
   EXPECT_EQ("arm_flex_joint", msg.drive_modes[1].joint);

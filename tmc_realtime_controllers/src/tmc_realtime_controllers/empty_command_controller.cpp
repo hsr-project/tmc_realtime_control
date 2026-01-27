@@ -25,7 +25,90 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
-#include <pluginlib/class_list_macros.h>
-
 #include "empty_command_controller.hpp"
-PLUGINLIB_EXPORT_CLASS(tmc_realtime_controllers::EmptyCommandController, controller_interface::ControllerBase);
+
+namespace tmc_realtime_controllers {
+
+controller_interface::CallbackReturn EmptyCommandController::on_init() {
+  command_interface_name_ = auto_declare<std::string>("command_interface_name", "");
+  if (command_interface_name_.empty()) {
+    RCLCPP_ERROR(get_node()->get_logger(), "command_interface_name is empty.");
+    return controller_interface::CallbackReturn::ERROR;
+  }
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::InterfaceConfiguration EmptyCommandController::command_interface_configuration() const {
+  controller_interface::InterfaceConfiguration command_interfaces_config;
+  command_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  command_interfaces_config.names.push_back(command_interface_name_);
+  return command_interfaces_config;
+}
+
+controller_interface::InterfaceConfiguration EmptyCommandController::state_interface_configuration() const {
+  return controller_interface::InterfaceConfiguration{controller_interface::interface_configuration_type::NONE};
+}
+
+controller_interface::CallbackReturn
+EmptyCommandController::on_configure(const rclcpp_lifecycle::State& previous_state) {
+  command_value_ = auto_declare<double>("command_value", 1.0);
+
+  const auto srv_name = auto_declare<std::string>("service_name", "~/trigger");
+  srv_ = get_node()->create_service<std_srvs::srv::Empty>(
+      srv_name, std::bind(&EmptyCommandController::Callback, this, std::placeholders::_1, std::placeholders::_2));
+
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn
+EmptyCommandController::on_activate(const rclcpp_lifecycle::State& previous_state) {
+  has_command_ = false;
+
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::CallbackReturn
+EmptyCommandController::on_deactivate(const rclcpp_lifecycle::State& previous_state) {
+  return controller_interface::CallbackReturn::SUCCESS;
+}
+
+controller_interface::return_type
+EmptyCommandController::update(const rclcpp::Time& time, const rclcpp::Duration& period) {
+  // It's okay if some parts are skipped, so make it a simple implementation
+  bool has_command;
+  if (command_mutex_.try_lock()) {
+    has_command = has_command_;
+    has_command_ = false;
+    command_mutex_.unlock();
+  } else {
+    has_command = false;
+  }
+  if (has_command) {
+    command_interfaces_[0].set_value(command_value_);
+  }
+  return controller_interface::return_type::OK;
+}
+
+void EmptyCommandController::Callback(const std_srvs::srv::Empty::Request::SharedPtr request,
+                                      const std_srvs::srv::Empty::Response::SharedPtr response) {
+  {
+    std::lock_guard<std::mutex> lock(command_mutex_);
+    has_command_ = true;
+  }
+  while (true) {
+    {
+      std::lock_guard<std::mutex> lock(command_mutex_);
+      if (!has_command_) {
+        break;
+      }
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+}
+
+}  // namespace tmc_realtime_controllers
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(tmc_realtime_controllers::EmptyCommandController,
+                       controller_interface::ControllerInterface)

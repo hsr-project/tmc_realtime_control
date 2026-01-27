@@ -51,7 +51,7 @@ namespace tmc_realtime_controllers {
 void ColorCommandController::StateSubscriber::CommandCallback(const std_msgs::ColorRGBA::ConstPtr& msg) {
   struct Command command;
   command.color = *msg;
-  command.time = ros::Time::now();  // Store the time when subscribed
+  command.time = ros::Time::now();  // Record the subscribed time
   command_.writeFromNonRT(command);
 }
 
@@ -64,8 +64,8 @@ void ColorCommandController::StateSubscriber::Update(const ros::Time& time) {
                    << " last_command_.r = " << last_command_.color.r << " last_command_.g = " << last_command_.color.g
                    << " last_command_.b = " << last_command_.color.b);
   if (timeout_.toSec() > 0 &&                  // Timeout is set
-      last_command_.time.toSec() > 0 &&        // Subscribed at least once so far
-      time - last_command_.time > timeout_) {  // Timeout duration has passed
+      last_command_.time.toSec() > 0 &&        // Subscribed at least once
+      time - last_command_.time > timeout_) {  // Timeout period has elapsed
     handle_.setColor(timeout_color_.r, timeout_color_.g, timeout_color_.b);
   } else {
     handle_.setColor(last_command_.color.r, last_command_.color.g, last_command_.color.b);
@@ -103,14 +103,14 @@ void ColorCommandController::update(const ros::Time& time, const ros::Duration& 
   (void)(time);    // unused
   (void)(period);  // unused
 
-  // Update all registered Handles
+  // Update all registered handles
   BOOST_FOREACH (boost::shared_ptr<StateSubscriber> const state_subscriber, state_subscribers_) {
     state_subscriber->Update(time);
   }
 }
 
 /**
- * @brief Pre-start process
+ * @brief Pre-start processing
  * @param[in] time time
  */
 void ColorCommandController::starting(const ros::Time& time) {
@@ -118,7 +118,7 @@ void ColorCommandController::starting(const ros::Time& time) {
 }
 
 /**
- * @brief Post-end process
+ * @brief Post-end processing
  * @param[in] time time
  */
 void ColorCommandController::stopping(const ros::Time& time) {

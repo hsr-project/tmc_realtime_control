@@ -31,7 +31,7 @@ DAMAGE.
 #include <string>
 
 #include <controller_interface/controller_interface.hpp>
-#include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_buffer.hpp>
 #include <std_msgs/msg/bool.hpp>
 
 namespace tmc_realtime_controllers {

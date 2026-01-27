@@ -43,6 +43,7 @@ controller_interface::CallbackReturn DigitalInputController::on_init() {
 
   auto_declare<std::string>("topic_name", "~/input");
   auto_declare<bool>("inverse_mode", false);
+  auto_declare<std::string>("qos_reliability", "RELIABLE");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -59,8 +60,17 @@ controller_interface::InterfaceConfiguration DigitalInputController::state_inter
 
 controller_interface::CallbackReturn
 DigitalInputController::on_configure(const rclcpp_lifecycle::State& /* previous_state */) {
+  auto qos_reliability = get_node()->get_parameter("qos_reliability").as_string();
+  rclcpp::QoS custom_qos_profile(1);
+  if (qos_reliability == "BEST_EFFORT") {
+    custom_qos_profile.best_effort();
+  } else {
+    custom_qos_profile.reliable();
+  }
   publisher_ = get_node()->create_publisher<std_msgs::msg::Bool>(
-      get_node()->get_parameter("topic_name").as_string(), 1);
+      get_node()->get_parameter("topic_name").as_string(), custom_qos_profile);
+  realtime_publisher_ = std::make_unique<RealtimePublisher>(publisher_);
+
   is_inverse_mode_ = get_node()->get_parameter("inverse_mode").as_bool();
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -91,7 +101,10 @@ DigitalInputController::update(const rclcpp::Time& /* time */, const rclcpp::Dur
     gpio_msg.data = !gpio_msg.data;
   }
 
-  publisher_->publish(gpio_msg);
+  if (realtime_publisher_ && realtime_publisher_->trylock()) {
+    realtime_publisher_->msg_ = gpio_msg;
+    realtime_publisher_->unlockAndPublish();
+  }
 
   return controller_interface::return_type::OK;
 }

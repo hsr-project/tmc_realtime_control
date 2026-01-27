@@ -43,8 +43,8 @@ const uint32_t kPublisherQueueSize = 100;  //!/ Queue size
 
 /**
  * @brief String copy without allocator
- * @param[in] source Source to copy from
- * @param[out] dist Destination to copy to
+ * @param[in] source Source for copy
+ * @param[out] dist Destination for copy
  */
 inline void StringCopyRT(const std::string& source, std::string& dist) {
   std::string::const_iterator end_it;
@@ -54,7 +54,7 @@ inline void StringCopyRT(const std::string& source, std::string& dist) {
     ROS_ERROR("string buffer is not enough buffer");
     end_it = source.begin() + dist.capacity() - 1;
   }
-  // std::copy std::copy(source.begin(), source.end(), dist.begin()); if
+  // std::copy std::copy(source.begin(), source.end(), dist.begin()); results in
   // After copying, the content of dist is judged as "\0"
   dist.clear();
   std::copy(source.begin(), end_it, std::back_inserter(dist));
@@ -90,7 +90,7 @@ bool DiagnosticController::init(tmc_hardware_interface::DiagnosticInterface* hw,
   diagnostic_msgs::DiagnosticArray& msg = publisher_.msg_;
   BOOST_FOREACH (std::string const name, names) {
     tmc_hardware_interface::DiagnosticHandle const handle = hw->getHandle(name);
-    // Pre-allocated
+    // Pre-allocate
     diagnostic_msgs::DiagnosticStatus status;
     status.name = handle.getName();
     status.hardware_id = handle.getHardwareId();
@@ -119,7 +119,7 @@ bool DiagnosticController::init(tmc_hardware_interface::DiagnosticInterface* hw,
 }
 
 /**
- * @brief Regular update
+ * @brief Periodic update
  * @param[in] time time
  * @param[in] period period
  */
@@ -135,7 +135,7 @@ void DiagnosticController::update(const ros::Time& time, const ros::Duration& pe
         tmc_hardware_interface::DiagnosticHandle& handle = handles_[i];
         diagnostic_msgs::DiagnosticStatus& status = msg.status[i];
         // status.name, status.hardware_id, status.values[n].key
-        // Deemed as unchanged
+        // Assumed to be unchanged
         status.level = handle.getLevel();
         StringCopyRT(handle.getMessage(), status.message);
         ROS_ASSERT_MSG((status.values.size() == handle.getSize()), " handle.size is changed.");
@@ -160,7 +160,7 @@ void DiagnosticController::starting(const ros::Time& time) {
 }
 
 /**
- * @brief Post-end processing
+ * @brief Processing at termination
  * @param[in] time time
  */
 void DiagnosticController::stopping(const ros::Time& time) {

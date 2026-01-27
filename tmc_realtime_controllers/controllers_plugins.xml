@@ -13,6 +13,13 @@
        Controller for digital input.
      </description>
   </class>
+  <class name="tmc_realtime_controllers/EmptyCommandController"
+         type="tmc_realtime_controllers::EmptyCommandController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Controller to send an empty command.
+    </description>
+  </class>
   <class name="tmc_realtime_controllers/ExxxDriveModeController"
          type="tmc_realtime_controllers::ExxxDriveModeController"
          base_class_type="controller_interface::ControllerInterface">
@@ -39,6 +46,13 @@
          base_class_type="controller_interface::ControllerInterface">
     <description>
       Controller to write servo parameters.
+    </description>
+  </class>
+  <class name="tmc_realtime_controllers/MotionCommandLimitterController"
+         type="tmc_realtime_controllers::MotionCommandLimitterController"
+         base_class_type="controller_interface::ChainableControllerInterface">
+    <description>
+      Controller to limit motion commands.
     </description>
   </class>
 </library>

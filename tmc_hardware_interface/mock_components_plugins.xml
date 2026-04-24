@@ -1,0 +1,9 @@
+<library path="tmc_hardware_interface">
+  <class name="tmc_hardware_interface/GenericSystem"
+         type="tmc_hardware_interface::GenericSystem"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Generic components for simple mocking of system hardware with command drive mode interface.
+    </description>
+  </class>
+</library>

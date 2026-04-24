@@ -16,6 +16,7 @@
   <depend>std_srvs</depend>
   <depend>tmc_control_msgs</depend>
   <depend>tmc_exxx_servo_motor_protocol</depend>
+  <depend>tmc_realtime_tools</depend>
   <depend>tmc_utils</depend>
   <depend>urdf</depend>
 

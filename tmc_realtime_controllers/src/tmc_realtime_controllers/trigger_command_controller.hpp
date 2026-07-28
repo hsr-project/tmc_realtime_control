@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -37,7 +37,7 @@ namespace tmc_realtime_controllers {
  * @brief Controller for SetBoolCommandHandle
  * Controller class supporting multiple handles
  *
- * Create a service with the name "[Handle Name]".
+ * Creates a service with the name "[Handle Name]".
  */
 typedef tmc_realtime_controllers::CommandServiceController<tmc_hardware_interface::TriggerCommandInterface,
                                                            std_srvs::Trigger>

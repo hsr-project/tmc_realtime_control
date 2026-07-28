@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -25,10 +25,11 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
+#include "digital_input_controller.hpp"
 
 #include <string>
 
-#include "digital_input_controller.hpp"
+#include "utils.hpp"
 
 
 namespace tmc_realtime_controllers {
@@ -93,16 +94,16 @@ DigitalInputController::on_deactivate(const rclcpp_lifecycle::State& /* previous
 controller_interface::return_type
 DigitalInputController::update(const rclcpp::Time& /* time */, const rclcpp::Duration& /* period */) {
   // Publish State
-  std_msgs::msg::Bool gpio_msg;
-  gpio_msg.data = static_cast<bool>(state_interfaces_.at(0).get_value());
+  bool value = static_cast<bool>(GetStateInterfaceValue(state_interfaces_.at(0)));
 
   // Inverse published state
   if (is_inverse_mode_) {
-    gpio_msg.data = !gpio_msg.data;
+    value = !value;
   }
 
-  if (realtime_publisher_ && realtime_publisher_->trylock()) {
-    realtime_publisher_->msg_ = gpio_msg;
+  const auto msg = realtime_publisher_->trylock();
+  if (msg) {
+    msg->data = value;
     realtime_publisher_->unlockAndPublish();
   }
 

@@ -2,6 +2,15 @@
 Changelog for package tmc_realtime_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.0 (2026-06-29)
+-------------------
+* Migration to ROS2 jazzy
+* Contributors: Keisuke Takeshita, Shigeo Tsuduki, Hiroaki Yaguchi, Yuki Hidaka
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package tmc_realtime_controllers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 2.2.0 (2025-12-04)
 -------------------
 * Add EmptyCommandController.

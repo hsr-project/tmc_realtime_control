@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -26,6 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 #include "empty_command_controller.hpp"
+#include "utils.hpp"
 
 namespace tmc_realtime_controllers {
 
@@ -52,6 +53,12 @@ controller_interface::InterfaceConfiguration EmptyCommandController::state_inter
 controller_interface::CallbackReturn
 EmptyCommandController::on_configure(const rclcpp_lifecycle::State& previous_state) {
   command_value_ = auto_declare<double>("command_value", 1.0);
+  const auto use_no_request_command_value = auto_declare<bool>("use_no_request_command_value", false);
+  if (use_no_request_command_value) {
+    no_request_command_value_ = auto_declare<double>("no_request_command_value", 0.0);
+  } else {
+    no_request_command_value_ = std::nullopt;
+  }
 
   const auto srv_name = auto_declare<std::string>("service_name", "~/trigger");
   srv_ = get_node()->create_service<std_srvs::srv::Empty>(
@@ -84,7 +91,11 @@ EmptyCommandController::update(const rclcpp::Time& time, const rclcpp::Duration&
     has_command = false;
   }
   if (has_command) {
-    command_interfaces_[0].set_value(command_value_);
+      SetCommandInterfaceValue(get_node()->get_logger(), command_interfaces_[0], command_value_);
+  } else {
+    if (no_request_command_value_) {
+      SetCommandInterfaceValue(get_node()->get_logger(), command_interfaces_[0], no_request_command_value_.value());
+    }
   }
   return controller_interface::return_type::OK;
 }

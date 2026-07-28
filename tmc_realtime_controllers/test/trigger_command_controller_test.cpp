@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -58,7 +58,7 @@ const size_t kHandleCount = 2;  //!/ Number of handles to register
 class TriggerCommandControllerTest : public ::testing::Test {
  public:
   TriggerCommandControllerTest() : controller_nh_("test_ok/tmc_trigger_command_controller") {
-    // Register handles and create corresponding publishers
+    // Registration of handles and creation of corresponding publishers
     for (size_t i = 0; i < kHandleCount; i++) {
       // Topic name is "trigger*"
       names_[i] = "/trigger";
@@ -79,10 +79,10 @@ class TriggerCommandControllerTest : public ::testing::Test {
   boost::array<std::string, kHandleCount> names_;                                                //!/ Node names
   boost::array<tmc_hardware_interface::TriggerCommandHandle::Data, kHandleCount> handle_datas_;  //!/ Data for handles
   boost::array<std_srvs::Trigger, kHandleCount> service_messages_;  //!/ Messages for services
-  boost::array<ros::ServiceClient, kHandleCount> service_clients_;  //!/ Corresponding ServiceClients
+  boost::array<ros::ServiceClient, kHandleCount> service_clients_;  //!/ Opposing ServiceClient
 
   /**
-   * @brief Handle state comparison
+   * @brief Comparison of handle states
    * @param[in] x Comparison target
    * @param[in] y Comparison target
    */
@@ -104,8 +104,8 @@ class TriggerCommandControllerTest : public ::testing::Test {
 
   /**
    * @brief Helper for Init test
-   * Ensure that handle values do not change when there is no service call
-   * Test to confirm that the handle flag is down when there is no service call
+   * Ensure that handle values do not change when no service calls are made
+   * Test to confirm that the handle flag is down when no service calls are made
    * @param initial_value
    * @param controller
    */
@@ -128,9 +128,9 @@ class TriggerCommandControllerTest : public ::testing::Test {
 
   /**
    * @brief Helper for making service calls in a separate thread
-   * Test to confirm that calling a service in a separate thread completes successfully.
-   * Calling this method without preparing an asynchronous spinner will deadlock the test.
-   * It is recommended to use it via the CallServices method, which also manages the asynchronous spinner
+   * Test to confirm that calling a service in a separate thread completes processing normally.
+   * Calling this method without preparing an asynchronous spinner will cause the test to deadlock.
+   * It is recommended to use this via the CallServices method, which also manages the asynchronous spinner.
    *
    * @param[in] index Index of the service to call
    */
@@ -148,7 +148,7 @@ class TriggerCommandControllerTest : public ::testing::Test {
    * @param[in] bits Bit value of the serviceClient to call (least significant bit is 0)
    */
   void CallServices(const uint32_t bits) {
-    ros::AsyncSpinner async_spinner((kHandleCount * 2) + 1);  // Run spinner for callback resolution. Maximum number of services + 1 extra
+    ros::AsyncSpinner async_spinner((kHandleCount * 2) + 1);  // Spin the spinner for callback resolution. Maximum number of services + 1 extra
     async_spinner.start();
 
     // Service call
@@ -164,12 +164,12 @@ class TriggerCommandControllerTest : public ::testing::Test {
 
   /**
    * @brief Helper template for service tests
-   * Test to confirm that the handle flag is set correctly after calling the service
-   * Customize Robot_hw processing for each test
-   * Specify the serviceClient to call with bits.
+   * Test to call a service and confirm that the handle flag is set correctly
+   * Robot_hw processing is customized for each test
+   * Specify the serviceClient to call using bits.
    * @param[in] bits Bit value of the serviceClient to call (least significant bit is 0)
    * @param[in] controller controller
-   * @param[in] func Processing that Robot_hw performs during execution
+   * @param[in] func Processing performed by Robot_hw during execution
    */
   void ServiceTestHelperBase(const uint32_t bits, tmc_realtime_controllers::TriggerCommandController& controller,
                              boost::function<void(const size_t)> func) {
@@ -190,7 +190,7 @@ class TriggerCommandControllerTest : public ::testing::Test {
       }
       EXPECT_EQ(handle_datas_[i].has_request_, expect);
       if (expect) {
-        func(i);  // Update processing for Hw layer
+        func(i);  // Update processing in the Hw layer
       }
     }
 
@@ -216,7 +216,7 @@ class TriggerCommandControllerTest : public ::testing::Test {
     ServiceTestHelperBase(bits, controller, boost::bind(&TriggerCommandControllerTest::NomalProcess, this, _1));
   }
   void NomalProcess(const size_t index) {
-    // In normal cases, drop the flag as processing is completed
+    // Normal case drops the flag as processing is completed
     handle_datas_[index].has_request_ = false;
   }
 
@@ -241,8 +241,8 @@ class TriggerCommandControllerTest : public ::testing::Test {
   }
 
   /**
-   * @brief Helper for service multiple call tests
-   * Test if calling the same service during Robot_hw update returns an immediate error
+   * @brief Helper for testing multiple service calls
+   * Test to call the same service during Robot_hw updates and check if an immediate error is returned
    *
    * @param[in] bits Bit value of the serviceClient to call (least significant bit is 0)
    * @param[in] controller controller
@@ -284,21 +284,21 @@ TEST_F(TriggerCommandControllerTest, InitNomalTest) {
   trigger_c.stopping(ros::Time::now());
 }
 
-// Init fails when required Params do not exist
+// Confirm that init fails when required Params are missing
 TEST_F(TriggerCommandControllerTest, InitFailureTest_BadNamespace) {
   tmc_realtime_controllers::TriggerCommandController trigger_c;
   ros::NodeHandle bad_controller_nh("no_period_namespace");
   EXPECT_FALSE(trigger_c.init(&trigger_iface_, root_nh_, bad_controller_nh));
 }
 
-// Init fails when Params are invalid (0 or less)
+// Confirm that init fails when invalid Params (less than or equal to 0) are provided
 TEST_F(TriggerCommandControllerTest, InitFailureTest_BadParam) {
   tmc_realtime_controllers::TriggerCommandController trigger_c;
   ros::NodeHandle bad_controller_nh("test_ko/tmc_trigger_command_controller");
   EXPECT_FALSE(trigger_c.init(&trigger_iface_, root_nh_, bad_controller_nh));
 }
 
-// When there are two nodes, the handle flag is set correctly for a service call with proper allocation
+// When there are two nodes, confirm that the flag of the handle called by the service is set correctly with proper allocation
 TEST_F(TriggerCommandControllerTest, ServiceNomalTest_Allocation) {
   tmc_hardware_interface::TriggerCommandHandle::Data init_value;
   tmc_realtime_controllers::TriggerCommandController trigger_c;
@@ -314,13 +314,13 @@ TEST_F(TriggerCommandControllerTest, ServiceNomalTest_Allocation) {
   }
 }
 
-// Execution result is returned to the caller during a service call
+// Confirm that execution results are returned to the caller during service calls
 TEST_F(TriggerCommandControllerTest, ServiceNomalTest_ResponseData) {
   tmc_hardware_interface::TriggerCommandHandle::Data init_value;
   tmc_realtime_controllers::TriggerCommandController trigger_c;
   ASSERT_NO_FATAL_FAILURE(InitTestHelper(init_value, trigger_c));
 
-  // Test of response
+  // Test for response
   boost::array<bool, 2> expect_bools = {true, false};
   BOOST_FOREACH (bool expect, expect_bools) {
     std::stringstream name;
@@ -335,10 +335,10 @@ TEST_F(TriggerCommandControllerTest, ServiceNomalTest_ResponseData) {
     CompareResponse(service_messages_[0].response, sb.response);
   }
 
-  // Test is not conducted as the message is a fixed value
+  // No test is conducted as the message is a fixed value
 }
 
-// Flag automatically drops when a timeout occurs
+// Confirm that the flag automatically drops during timeout
 TEST_F(TriggerCommandControllerTest, ServiceFailureTest_Timeout) {
   tmc_hardware_interface::TriggerCommandHandle::Data init_value;
   tmc_realtime_controllers::TriggerCommandController trigger_c;
@@ -350,7 +350,7 @@ TEST_F(TriggerCommandControllerTest, ServiceFailureTest_Timeout) {
   sb.response.message = "Hardware did not respond. Timeout";
   CompareResponse(service_messages_[0].response, sb.response);
 
-  // Confirm if it has returned to the normal state
+  // Confirm that the system has returned to normal
   sb.response.success = true;
   handle_datas_[0].response_ = true;
   sb.response.message = "OK";
@@ -358,7 +358,7 @@ TEST_F(TriggerCommandControllerTest, ServiceFailureTest_Timeout) {
   CompareResponse(service_messages_[0].response, sb.response);
 }
 
-// When another service call is made during service execution, an immediate error is returned to the second service
+// During service execution, if another service call is made, confirm that an immediate error is returned for the second service
 TEST_F(TriggerCommandControllerTest, ServiceFailureTest_AlreadyInUse) {
   tmc_hardware_interface::TriggerCommandHandle::Data init_value;
   tmc_realtime_controllers::TriggerCommandController trigger_c;
@@ -372,7 +372,7 @@ TEST_F(TriggerCommandControllerTest, ServiceFailureTest_AlreadyInUse) {
   // ServiceAlreadyUseTestHelper(1, trigger_c);
   // CompareResponse(service_messages_[0].response, sb.response);
 
-  // Confirm if it has returned to the normal state
+  // Confirm that the system has returned to normal
   ServiceNomalTestHelper(1, trigger_c);
   CompareResponse(service_messages_[0].response, sb.response);
 }

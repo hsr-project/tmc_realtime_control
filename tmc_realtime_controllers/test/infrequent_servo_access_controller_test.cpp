@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -25,7 +25,7 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
-/// @brief Test of a controller that provides a service for reading and writing parameters
+/// @brief Test of the controller that provides a service for reading and writing parameters
 
 #include <memory>
 #include <string>
@@ -73,17 +73,40 @@ class InfrequentControllerTest : public ::testing::Test {
     // Parameter definition
     std::vector<std::string> joint_names = { "JointA" };
 
-    reader_controller_node_->declare_parameter<std::vector<std::string> >("joints", joint_names);
-    reader_controller_node_->declare_parameter<std::string>("attribute", "reader");
+    if (reader_controller_node_->has_parameter("joints")) {
+      std::vector<rclcpp::Parameter> params;
+      params.push_back(rclcpp::Parameter("joints", std::vector<std::string>{ "JointA" }));
+      reader_controller_node_->set_parameters(params);
+    } else {
+      reader_controller_node_->declare_parameter<std::vector<std::string> >("joints", joint_names);
+    }
 
-    writer_controller_node_->declare_parameter<std::vector<std::string> >("joints", joint_names);
-    writer_controller_node_->declare_parameter<std::string>("attribute", "writer");
-    writer_controller_node_->set_parameter(rclcpp::Parameter("denied_keys", kDeniedKeys));
+    if (reader_controller_node_->has_parameter("attribute")) {
+      reader_controller_node_->set_parameter(rclcpp::Parameter("attribute", "reader"));
+    } else {
+      reader_controller_node_->declare_parameter<std::string>("attribute", "reader");
+    }
 
-    EXPECT_EQ(reader_controller_->init(kReadControllerNodeName), controller_interface::return_type::OK);
+    if (writer_controller_node_->has_parameter("joints")) {
+      std::vector<rclcpp::Parameter> params;
+      params.push_back(rclcpp::Parameter("joints", std::vector<std::string>{ "JointA" }));
+      writer_controller_node_->set_parameters(params);
+    } else {
+      writer_controller_node_->declare_parameter<std::vector<std::string> >("joints", joint_names);
+    }
+    if (writer_controller_node_->has_parameter("attribute")) {
+      writer_controller_node_->set_parameter(rclcpp::Parameter("attribute", "writer"));
+    } else {
+      writer_controller_node_->declare_parameter<std::string>("attribute", "writer");
+    }
+    if (writer_controller_node_->has_parameter("denied_keys")) {
+      writer_controller_node_->set_parameter(rclcpp::Parameter("denied_keys", kDeniedKeys));
+    } else {
+      writer_controller_node_->declare_parameter<std::vector<std::string> >("denied_keys", kDeniedKeys);
+    }
 
-    EXPECT_EQ(writer_controller_->init(kWriteControllerNodeName), controller_interface::return_type::OK);
-
+    reader_controller_->InitImpl();
+    writer_controller_->InitImpl();
 
     reader_hardware_ = std::make_shared<HardwareStub>(joint_names);
     writer_hardware_ = std::make_shared<HardwareStub>(joint_names);
@@ -112,6 +135,11 @@ class InfrequentControllerTest : public ::testing::Test {
 
     EXPECT_TRUE(reader_param_srv_client_->wait_for_service());
     EXPECT_TRUE(writer_param_srv_client_->wait_for_service());
+  }
+
+  void TearDown() override {
+    reader_controller_->release_interfaces();
+    writer_controller_->release_interfaces();
   }
 
   void spin_some_thread(const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node) {
@@ -167,7 +195,7 @@ TEST_F(InfrequentControllerTest, InvalidJointName) {
 
   EXPECT_DOUBLE_EQ(0.0, tmp_value);
 }
-// Parameter writing, specify key for write rejection
+// Parameter writing, specify a key that denies writing
 TEST_F(InfrequentControllerTest, DeniedKey) {
   rclcpp::spin_some(writer_controller_node_->get_node_base_interface());
 

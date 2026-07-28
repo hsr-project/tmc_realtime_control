@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -46,7 +46,7 @@ DAMAGE.
  * @param[in] inputs Input values sent by the Publisher
  * @param[in] outputs Expected output values of the Handle
  * @param[in] publishers Publisher
- * @param[in] values Destination for rewriting the Handle
+ * @param[in] values Values to overwrite in the Handle
  * @param[in] controller ros_controller
  */
 template <typename InputType, typename OutputType, size_t Size>
@@ -59,7 +59,7 @@ void RunOutputInterfaceTest(const boost::array<InputType, Size>& inputs, const b
     return;
   }
 
-  // Send
+  // Sending
   for (size_t i = 0; i < Size; ++i) {
     publishers[i].publish(inputs[i]);
   }
@@ -116,7 +116,7 @@ class StateSubscriber {
 };
 
 /**
- * @brief Test to receive handle values with Subscriber
+ * @brief Test to receive handle values with the Subscriber
  *
  * @param[in] inputs Input values to set in values
  * @param[in] outputs Expected output values of subscribe_datas

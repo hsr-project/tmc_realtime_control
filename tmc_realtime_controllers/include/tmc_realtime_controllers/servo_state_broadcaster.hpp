@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -70,8 +70,6 @@ auto GetParameter(const rclcpp_lifecycle::LifecycleNode::SharedPtr& node, const 
 class ServoStateBroadcaster : public controller_interface::ControllerInterface {
  public:
   ServoStateBroadcaster();
-  controller_interface::return_type init(const std::string& controller_name, const std::string& namespace_ = "",
-                                         const rclcpp::NodeOptions& node_options = rclcpp::NodeOptions()) override;
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
   controller_interface::return_type update(const rclcpp::Time& time, const rclcpp::Duration& period) override;
@@ -87,7 +85,7 @@ class ServoStateBroadcaster : public controller_interface::ControllerInterface {
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
       const rclcpp_lifecycle::State& previous_state) override;
 
-  // Initialization of parts other than ControllerInterface::init, division for testing
+  // Initialization of parts other than ControllerInterface::init, split for testing
   bool InitImpl();
 
  private:

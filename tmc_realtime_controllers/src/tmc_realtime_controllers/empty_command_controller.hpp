@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -54,6 +54,7 @@ class EmptyCommandController : public controller_interface::ControllerInterface 
  private:
   std::string command_interface_name_;
   double command_value_;
+  std::optional<double> no_request_command_value_;
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr srv_;
   void Callback(const std_srvs::srv::Empty::Request::SharedPtr request,

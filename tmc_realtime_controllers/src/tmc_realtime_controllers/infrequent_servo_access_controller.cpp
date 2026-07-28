@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -36,20 +36,22 @@ DAMAGE.
 #include <tmc_realtime_controllers/infrequent_servo_access_controller.hpp>
 #include <tmc_realtime_controllers/servo_state_broadcaster.hpp>
 
+#include "utils.hpp"
+
 namespace {
-// Upper limit of read/write retry count
+// Maximum number of read/write retry attempts
 const uint16_t kMaxRetry = 3;
-// Read/write completion check wait time [sec]
+// Waiting time for read/write completion check [sec]
 const double kDriveModeTick = 0.01;
 // Read/write timeout [sec]
 const double kRequestTimeout = 3.0;
 // Hardware controller wait time [msec]
 const int kWaitForController = 3000;
-// Get key
+// Retrieve key
 std::string GetKey(uint32_t key_index, const std::shared_ptr<tmc_control_msgs::srv::ReadParameters::Request> request) {
   return request->keys[key_index];
 }
-// Get key
+// Retrieve key
 std::string GetKey(uint32_t key_index, const std::shared_ptr<tmc_control_msgs::srv::WriteParameters::Request> request) {
   return request->values[key_index].key;
 }
@@ -57,22 +59,6 @@ std::string GetKey(uint32_t key_index, const std::shared_ptr<tmc_control_msgs::s
 }  // namespace
 
 namespace tmc_realtime_controllers {
-
-template <typename Type, typename SrvReq, typename SrvRes>
-controller_interface::return_type InfrequentServoAccessController<Type, SrvReq, SrvRes>::init(
-    const std::string& controller_name, const std::string& namespace_, const rclcpp::NodeOptions& node_options) {
-  const auto ret = ControllerInterface::init(controller_name, namespace_, node_options);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
-
-  controller_name_ = controller_name;
-  if (InitImpl()) {
-    return controller_interface::return_type::OK;
-  } else {
-    return controller_interface::return_type::ERROR;
-  }
-}
 
 template <typename Type, typename SrvReq, typename SrvRes>
 bool InfrequentServoAccessController<Type, SrvReq, SrvRes>::InitImpl() {
@@ -113,7 +99,11 @@ bool InfrequentServoAccessController<Type, SrvReq, SrvRes>::InitImpl() {
 template <typename Type, typename SrvReq, typename SrvRes>
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 InfrequentServoAccessController<Type, SrvReq, SrvRes>::on_init() {
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  if (InitImpl()) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  } else {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
 }
 
 template <typename Type, typename SrvReq, typename SrvRes>
@@ -132,7 +122,7 @@ InfrequentServoAccessController<Type, SrvReq, SrvRes>::on_deactivate(const rclcp
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-// Update controller
+// Update the controller
 template <typename Type, typename SrvReq, typename SrvRes>
 controller_interface::return_type InfrequentServoAccessController<Type, SrvReq, SrvRes>::update(
     const rclcpp::Time& time, const rclcpp::Duration& period) {
@@ -151,14 +141,14 @@ controller_interface::return_type InfrequentServoAccessController<Type, SrvReq, 
   }
 
   uint32_t is_success =
-    static_cast<uint32_t>(state_interfaces_[state_is_success_index_[joint_index].value()].get_value());
+    static_cast<uint32_t>(GetStateInterfaceValue(state_interfaces_[state_is_success_index_[joint_index].value()]));
   uint32_t has_command =
-    static_cast<uint32_t>(state_interfaces_[state_has_command_index_[joint_index].value()].get_value());
+    static_cast<uint32_t>(GetStateInterfaceValue(state_interfaces_[state_has_command_index_[joint_index].value()]));
   uint32_t trial_num =
-    static_cast<uint32_t>(state_interfaces_[state_trial_num_index_[joint_index].value()].get_value());
+    static_cast<uint32_t>(GetStateInterfaceValue(state_interfaces_[state_trial_num_index_[joint_index].value()]));
 
   if (CheckRequestStateFromRT(kRequestSend) && ((has_command == 0) || (trial_num >= kMaxRetry))) {
-    // Success if the command is consumed
+    // Success if the command has been consumed
     if ((has_command == 0) && (is_success == 1)) {
       GetResult(joint_index);
       request_is_success_.writeFromNonRT(true);
@@ -166,11 +156,11 @@ controller_interface::return_type InfrequentServoAccessController<Type, SrvReq, 
       request_is_success_.writeFromNonRT(false);
     }
     // Since request_is_success_ is read after Done on the service side
-    // Need to transition to Done state later
+    // It is necessary to transition to the Done state later
     UpdateRequestStateFromRT(kRequestDone);
   }
 
-  // Send request if not empty
+  // Send the request if it is not empty
   if (CheckRequestStateFromRT(kNoRequest) && (joint_index < joint_names_.size())) {
     // Set command information.
     if (SetRequest(joint_index)) {
@@ -180,11 +170,11 @@ controller_interface::return_type InfrequentServoAccessController<Type, SrvReq, 
 
   return controller_interface::return_type::OK;
 }
-// Callback for service to read and write parameters
+// Callback for the service that reads and writes parameters
 template <typename Type, typename SrvReq, typename SrvRes>
 void InfrequentServoAccessController<Type, SrvReq, SrvRes>::ServiceCallBack(const std::shared_ptr<SrvReq> request,
                                                                             const std::shared_ptr<SrvRes> response) {
-  // Search for target joint
+  // Search for the target joint
   response->success = false;
   std::vector<std::string>::iterator joint_it(std::find(joint_names_.begin(), joint_names_.end(), request->name));
   if (joint_it == joint_names_.end()) {
@@ -193,7 +183,7 @@ void InfrequentServoAccessController<Type, SrvReq, SrvRes>::ServiceCallBack(cons
   }
   uint32_t joint_index(std::distance(joint_names_.begin(), joint_it));
 
-  // Check if key contains access denial
+  // Check if the key contains access denial
   uint32_t command_size = GetCommandSize(*request);
   for (uint32_t key_index = 0; key_index < command_size; ++key_index) {
     if (std::binary_search(denied_keys_.begin(), denied_keys_.end(), GetKey(key_index, request))) {
@@ -214,10 +204,10 @@ void InfrequentServoAccessController<Type, SrvReq, SrvRes>::ServiceCallBack(cons
       continue;
     }
 
-    // Pack command into buffer
+    // Pack commands into the buffer
     WriteToBuffer(key_index, *request);
     request_joint_index_.writeFromNonRT(joint_index);
-    // Wait for read/write to finish
+    // Wait for the read/write to complete
     bool is_not_done = true;
     while (is_not_done) {
       std::unique_ptr<rclcpp::Time> now = std::make_unique<rclcpp::Time>(get_node()->get_clock()->now());
@@ -231,7 +221,7 @@ void InfrequentServoAccessController<Type, SrvReq, SrvRes>::ServiceCallBack(cons
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    // Check if read/write completed successfully
+    // Check if the read/write completed successfully
     request_joint_index_.writeFromNonRT(joint_names_.size());
     if (*request_is_success_.readFromNonRT()) {
       ReadFromBuffer(key_index, *response);
@@ -242,7 +232,7 @@ void InfrequentServoAccessController<Type, SrvReq, SrvRes>::ServiceCallBack(cons
     UpdateRequestStateFromNonRT(kNoRequest);
   }
 
-  // Success in all read/write
+  // All read/write operations succeeded
   if (is_command_not_found) {
     response->success = false;
   } else {
@@ -279,28 +269,28 @@ void InfrequentServoAccessController<Type, SrvReq, SrvRes>::CommonGetIndex(std::
   return;
 }
 
-// Check if request state is target state
+// Check if the request state matches the target state
 template <typename Type, typename SrvReq, typename SrvRes>
 bool InfrequentServoAccessController<Type, SrvReq, SrvRes>::CheckRequestStateFromNonRT(RequestState target) {
   boost::mutex::scoped_lock lock(request_lock_);
   return (request_state_ == target);
 }
 
-// Check if request state is target state
+// Check if the request state matches the target state
 template <typename Type, typename SrvReq, typename SrvRes>
 bool InfrequentServoAccessController<Type, SrvReq, SrvRes>::CheckRequestStateFromRT(RequestState target) {
   boost::mutex::scoped_lock lock(request_lock_, boost::try_to_lock);
   return lock && (request_state_ == target);
 }
 
-// Rewrite request state
+// Rewrite the request state
 template <typename Type, typename SrvReq, typename SrvRes>
 void InfrequentServoAccessController<Type, SrvReq, SrvRes>::UpdateRequestStateFromNonRT(RequestState target) {
   boost::mutex::scoped_lock lock(request_lock_);
   request_state_ = target;
 }
 
-// Rewrite request state
+// Rewrite the request state
 template <typename Type, typename SrvReq, typename SrvRes>
 bool InfrequentServoAccessController<Type, SrvReq, SrvRes>::UpdateRequestStateFromRT(RequestState target) {
   boost::mutex::scoped_lock lock(request_lock_, boost::try_to_lock);
@@ -312,26 +302,26 @@ bool InfrequentServoAccessController<Type, SrvReq, SrvRes>::UpdateRequestStateFr
   }
 }
 
-// Receive result
+// Receive the result
 void InfrequentReadingController::GetResult(uint32_t joint_index) {
   if (!state_read_value_index_[joint_index].has_value()) {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("rclcpp"), " Joint index was not found. Joint : " << joint_index);
     return;
   }
-  double value = state_interfaces_[state_read_value_index_[joint_index].value()].get_value();
+  double value = GetStateInterfaceValue(state_interfaces_[state_read_value_index_[joint_index].value()]);
   request_value_.writeFromNonRT(value);
 }
-// Get number of read/write commands
+// Get the number of read/write commands
 uint32_t InfrequentReadingController::GetCommandSize(
     const tmc_control_msgs::srv::ReadParameters::Request& request) const {
   return request.keys.size();
 }
-// Write command to buffer
+// Write commands to the buffer
 void InfrequentReadingController::WriteToBuffer(uint32_t key_index,
                                                 const tmc_control_msgs::srv::ReadParameters::Request& request) {
   request_key_.writeFromNonRT(request.keys[key_index]);
 }
-// Read result from buffer
+// Read results from the buffer
 void InfrequentReadingController::ReadFromBuffer(uint32_t key_index,
                                                  tmc_control_msgs::srv::ReadParameters::Response& response) {
   tmc_control_msgs::msg::ServoParam value;
@@ -341,7 +331,7 @@ void InfrequentReadingController::ReadFromBuffer(uint32_t key_index,
   response.values.push_back(value);
 }
 
-// Send command
+// Send commands
 bool InfrequentReadingController::SetRequest(uint32_t joint_index) {
   double command_index_value = static_cast<double>(control_table_.GetCommandIndex(*request_key_.readFromRT()));
 
@@ -352,14 +342,17 @@ bool InfrequentReadingController::SetRequest(uint32_t joint_index) {
     return false;
   }
 
-  command_interfaces_[command_index_[joint_index].value()].set_value(command_index_value);
-  command_interfaces_[command_has_command_index_[joint_index].value()].set_value(1.0);
-  command_interfaces_[command_trial_num_index_[joint_index].value()].set_value(0.0);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_index_[joint_index].value()], command_index_value);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_has_command_index_[joint_index].value()], 1.0);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_trial_num_index_[joint_index].value()], 0.0);
 
   return true;
 }
 
-// Get command interface.
+// Get the command interface.
 controller_interface::InterfaceConfiguration
 InfrequentReadingController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration conf;
@@ -372,7 +365,7 @@ InfrequentReadingController::command_interface_configuration() const {
   return conf;
 }
 
-// Get state interface.
+// Get the state interface.
 controller_interface::InterfaceConfiguration
 InfrequentReadingController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration conf;
@@ -397,19 +390,19 @@ InfrequentReadingController::on_activate(const rclcpp_lifecycle::State& previous
 }
 
 
-// Get number of read/write commands
+// Get the number of read/write commands
 uint32_t InfrequentWritingController::GetCommandSize(
     const tmc_control_msgs::srv::WriteParameters::Request& request) const {
   return request.values.size();
 }
-// Write command to buffer
+// Write commands to the buffer
 void InfrequentWritingController::WriteToBuffer(uint32_t key_index,
                                                 const tmc_control_msgs::srv::WriteParameters::Request& request) {
   request_key_.writeFromNonRT(request.values[key_index].key);
   request_value_.writeFromNonRT(request.values[key_index].value);
 }
 
-// Send command
+// Send commands
 bool InfrequentWritingController::SetRequest(uint32_t joint_index) {
   double command_index_value = static_cast<double>(control_table_.GetCommandIndex(*request_key_.readFromRT()));
   double command_value = *request_value_.readFromRT();
@@ -422,15 +415,19 @@ bool InfrequentWritingController::SetRequest(uint32_t joint_index) {
     return false;
   }
 
-  command_interfaces_[command_index_[joint_index].value()].set_value(command_index_value);
-  command_interfaces_[command_write_valude_index_[joint_index].value()].set_value(command_value);
-  command_interfaces_[command_has_command_index_[joint_index].value()].set_value(1.0);
-  command_interfaces_[command_trial_num_index_[joint_index].value()].set_value(0.0);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_index_[joint_index].value()], command_index_value);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_write_valude_index_[joint_index].value()], command_value);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_has_command_index_[joint_index].value()], 1.0);
+  SetCommandInterfaceValue(
+    rclcpp::get_logger("rclcpp"), command_interfaces_[command_trial_num_index_[joint_index].value()], 0.0);
 
   return true;
 }
 
-// Get command interface.
+// Get the command interface.
 controller_interface::InterfaceConfiguration
 InfrequentWritingController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration conf;
@@ -444,7 +441,7 @@ InfrequentWritingController::command_interface_configuration() const {
   return conf;
 }
 
-// Get state interface.
+// Get the state interface.
 controller_interface::InterfaceConfiguration
 InfrequentWritingController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration conf;
@@ -471,7 +468,7 @@ InfrequentWritingController::on_activate(const rclcpp_lifecycle::State& previous
 
 #include "pluginlib/class_list_macros.hpp"
 
-// Declare controller as plugin
+// Declare the controller as a plugin
 PLUGINLIB_EXPORT_CLASS(tmc_realtime_controllers::InfrequentReadingController,
                        controller_interface::ControllerInterface);
 

@@ -48,8 +48,8 @@
       Controller to write servo parameters.
     </description>
   </class>
-  <class name="tmc_realtime_controllers/MotionCommandLimitterController"
-         type="tmc_realtime_controllers::MotionCommandLimitterController"
+  <class name="tmc_realtime_controllers/MotionCommandLimiterController"
+         type="tmc_realtime_controllers::MotionCommandLimiterController"
          base_class_type="controller_interface::ChainableControllerInterface">
     <description>
       Controller to limit motion commands.

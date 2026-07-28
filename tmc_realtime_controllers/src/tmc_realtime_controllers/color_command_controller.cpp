@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -64,8 +64,8 @@ void ColorCommandController::StateSubscriber::Update(const ros::Time& time) {
                    << " last_command_.r = " << last_command_.color.r << " last_command_.g = " << last_command_.color.g
                    << " last_command_.b = " << last_command_.color.b);
   if (timeout_.toSec() > 0 &&                  // Timeout is set
-      last_command_.time.toSec() > 0 &&        // Subscribed at least once
-      time - last_command_.time > timeout_) {  // Timeout period has elapsed
+      last_command_.time.toSec() > 0 &&        // Subscribed at least once before
+      time - last_command_.time > timeout_) {  // Timeout duration has passed
     handle_.setColor(timeout_color_.r, timeout_color_.g, timeout_color_.b);
   } else {
     handle_.setColor(last_command_.color.r, last_command_.color.g, last_command_.color.b);

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -28,6 +28,8 @@ DAMAGE.
 #include "digital_output_controller.hpp"
 
 #include <string>
+
+#include "utils.hpp"
 
 namespace tmc_realtime_controllers {
 
@@ -82,8 +84,8 @@ DigitalOutputController::on_deactivate(const rclcpp_lifecycle::State& previous_s
 
 controller_interface::return_type
 DigitalOutputController::update(const rclcpp::Time& time, const rclcpp::Duration& period) {
-  const auto output = *command_.readFromRT();
-  command_interfaces_[0].set_value(output);
+  const double output = static_cast<double>(*command_.readFromRT());
+  SetCommandInterfaceValue(get_node()->get_logger(), command_interfaces_[0], output);
   return controller_interface::return_type::OK;
 }
 

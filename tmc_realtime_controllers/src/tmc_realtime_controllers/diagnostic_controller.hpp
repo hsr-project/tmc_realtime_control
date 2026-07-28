@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -41,18 +41,18 @@ DAMAGE.
 #include <tmc_hardware_interface/diagnostic_interface.hpp>
 
 // TODO(kitsunai): テスト内容
-// Use two handles with 1 key value as the basic form for the publish test
-// Assign types to key values (int, uint, double, string)
-// Test of default conv (when buffer is exceeded, etc.)
+// Test with two handles holding 1 key value, using publishing as the basic form
+// Assign types to key value (int, uint, double, string)
+// Test default conversion (e.g., when buffer is exceeded)
 
 namespace tmc_realtime_controllers {
 /**
  * @brief Controller for DiagnosticInterface
  * Controller class supporting multiple DiagnosticHandles
  *
- * Combines KeyValues of multiple handles into one and publishes topics from a publisher named "/diagnostics".
- * The publisher sends topics at 1[Hz].
- * To change the publishing rate, modify the "publish_rate" in ros param.
+ * Combines KeyValues from multiple handles and publishes topics from a publisher named "/diagnostics".
+ * The publisher sends topics at 1 [Hz].
+ * To change the publishing rate, modify the "publish_rate" parameter in ros param.
  */
 class DiagnosticController : public controller_interface::Controller<tmc_hardware_interface::DiagnosticInterface> {
  public:
@@ -77,17 +77,17 @@ class DiagnosticController : public controller_interface::Controller<tmc_hardwar
    */
   virtual void starting(const ros::Time& time);
   /**
-   * @brief Processing at termination
+   * @brief Post-shutdown processing
    * @param[in] time time
    */
   virtual void stopping(const ros::Time& time);
 
  private:
-  std::vector<tmc_hardware_interface::DiagnosticHandle> handles_;                  //!/ List of handles
+  std::vector<tmc_hardware_interface::DiagnosticHandle> handles_;                  //!/ Handle list
   realtime_tools::RealtimePublisher<diagnostic_msgs::DiagnosticArray> publisher_;  //!/ Publisher
   ros::Time last_published_time_;                                                  //!/ Last published time
   double publish_rate_;                                                            //!/ Publishing rate [Hz]
-  double expected_publish_time_;                                                   //!/ Publishing period [sec]
+  double expected_publish_time_;                                                   //!/ Publishing interval [sec]
 };
 }  // namespace tmc_realtime_controllers
 #endif  // TMC_REALTIME_CONTROLLERSTMC_DIAGNOSTIC_CONTROLLER_HPP_

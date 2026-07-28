@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -47,12 +47,12 @@ namespace tmc_realtime_controllers {
  * Controller class supporting multiple ColorCommandHandles
  *
  * Manages subscribers with the same name as the handle name.
- * Each time the update method is called, the handle's value is overwritten with the value of the last received topic.
+ * Each time the update method is called, the handle value is overwritten with the value of the last received topic.
  */
 class ColorCommandController : public controller_interface::Controller<tmc_hardware_interface::ColorCommandInterface> {
  private:
   /**
-   * @brief A set of necessary items for managing a single Handle
+   * @brief A complete set of items required for managing a single Handle
    */
   class StateSubscriber {
    private:
@@ -73,7 +73,7 @@ class ColorCommandController : public controller_interface::Controller<tmc_hardw
     /**
      * @brief Constructor
      * @param handle handle
-     * @param controller_nh NodeHandle for parameter reading
+     * @param controller_nh NodeHandle for parameter loading
      */
     StateSubscriber(const tmc_hardware_interface::ColorCommandHandle& handle, const ros::NodeHandle& controller_nh)
         : handle_(handle) {
@@ -142,7 +142,7 @@ class ColorCommandController : public controller_interface::Controller<tmc_hardw
   virtual void stopping(const ros::Time& time);
 
  private:
-  std::vector<boost::shared_ptr<ColorCommandController::StateSubscriber> > state_subscribers_;  //!/ Management target list
+  std::vector<boost::shared_ptr<ColorCommandController::StateSubscriber> > state_subscribers_;  //!/ Managed list
 };
 }  // namespace tmc_realtime_controllers
 

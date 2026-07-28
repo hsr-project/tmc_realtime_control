@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -25,7 +25,7 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
-/// @brief Controller providing a service to read and write parameters
+/// @brief Controller that provides a service to read and write parameters
 #ifndef TMC_REALTIME_CONTROLLERS_INFREQUENT_SERVO_ACCESS_CONTROLLER_HPP_
 #define TMC_REALTIME_CONTROLLERS_INFREQUENT_SERVO_ACCESS_CONTROLLER_HPP_
 
@@ -45,7 +45,7 @@ DAMAGE.
 
 namespace tmc_realtime_controllers {
 
-// Controller providing a service to read and write parameters
+// Controller that provides a service to read and write parameters
 template <typename Type, typename SrvReq, typename SrvRes>
 class InfrequentServoAccessController : public controller_interface::ControllerInterface {
  public:
@@ -54,8 +54,6 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   // Destructor
   ~InfrequentServoAccessController() {}
 
-  controller_interface::return_type init(const std::string& controller_name, const std::string& namespace_ = "",
-                                         const rclcpp::NodeOptions& node_options = rclcpp::NodeOptions()) override;
   controller_interface::return_type update(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_init() override;
@@ -66,18 +64,18 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(
       const rclcpp_lifecycle::State& previous_state) override;
 
-  // Initialization of parts other than ControllerInterface::init, split for testing
+  // Initialization of parts other than ControllerInterface::init, separated for testing
   bool InitImpl();
 
  protected:
-  // Receive results
+  // Receive the result
   virtual void GetResult(uint32_t joint_index) {}
 
   // Get the number of read/write commands
   virtual uint32_t GetCommandSize(const SrvReq& request) const { return 0; }
-  // Write commands to buffer
+  // Write commands to the buffer
   virtual void WriteToBuffer(uint32_t key_index, const SrvReq& request) {}
-  // Read results from buffer
+  // Read results from the buffer
   virtual void ReadFromBuffer(uint32_t key_index, SrvRes& response) {}
   // Send commands
   virtual bool SetRequest(uint32_t joint_index) { return true; }
@@ -96,17 +94,15 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   typename rclcpp::Service<Type>::SharedPtr parameter_srv_;
   // For storing control table information
   tmc_exxx_servo_motor_protocol::ControlTable control_table_;
-  // Node for service
+  // Node for the service
   rclcpp::Node::SharedPtr srv_node_;
 
-  // Controller attribute type
+  // Attribute type of the controller
   std::string attribute_;
-  // Joint names
+  // Group of joint names
   std::vector<std::string> joint_names_;
   // Keys to deny access
   std::vector<std::string> denied_keys_;
-  // Controller name
-  std::string controller_name_;
 
   // Index definition
   std::vector<std::optional<uint32_t>> command_index_;
@@ -133,9 +129,9 @@ class InfrequentServoAccessController : public controller_interface::ControllerI
   // For changing the state of the request
   boost::mutex request_lock_;
 
-  // Check if the state of the request is the target state
+  // Check if the state of the request matches the target state
   bool CheckRequestStateFromNonRT(RequestState target);
-  // Check if the state of the request is the target state
+  // Check if the state of the request matches the target state
   bool CheckRequestStateFromRT(RequestState target);
   // Rewrite the state of the request
   void UpdateRequestStateFromNonRT(RequestState target);
@@ -162,13 +158,13 @@ class InfrequentReadingController
  private:
   std::vector<std::optional<uint32_t>> state_read_value_index_;
 
-  // Receive results
+  // Receive the result
   virtual void GetResult(uint32_t joint_index);
   // Get the number of read/write commands
   virtual uint32_t GetCommandSize(const tmc_control_msgs::srv::ReadParameters::Request& request) const;
-  // Write commands to buffer
+  // Write commands to the buffer
   virtual void WriteToBuffer(uint32_t key_index, const tmc_control_msgs::srv::ReadParameters::Request& request);
-  // Read results from buffer
+  // Read results from the buffer
   virtual void ReadFromBuffer(uint32_t key_index, tmc_control_msgs::srv::ReadParameters::Response& response);
   // Send commands
   virtual bool SetRequest(uint32_t joint_index);
@@ -193,13 +189,13 @@ class InfrequentWritingController
  private:
   std::vector<std::optional<uint32_t>> command_write_valude_index_;
 
-  // Receive results
+  // Receive the result
   virtual void GetResult(uint32_t joint_index) {}
   // Get the number of read/write commands
   virtual uint32_t GetCommandSize(const tmc_control_msgs::srv::WriteParameters::Request& request) const;
-  // Write commands to buffer
+  // Write commands to the buffer
   virtual void WriteToBuffer(uint32_t key_index, const tmc_control_msgs::srv::WriteParameters::Request& request);
-  // Read results from buffer
+  // Read results from the buffer
   virtual void ReadFromBuffer(uint32_t key_index, tmc_control_msgs::srv::WriteParameters::Response& response) {}
   // Send commands
   virtual bool SetRequest(uint32_t joint_index);

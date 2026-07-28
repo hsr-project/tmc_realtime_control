@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -26,7 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 /// @file exxx_drive_mode_controller-test.cpp
-/// @brief Test for the controller that changes the drive mode
+/// @brief Test of the controller that changes the drive mode
 
 #include <gtest/gtest.h>
 
@@ -46,11 +46,23 @@ class ExxxDriveModeControllerTest : public ::testing::Test {
     controller_ = std::make_shared<TestableExxxDriveModeController>();
     controller_node_ = controller_->get_node();
 
-    controller_node_->declare_parameter<std::vector<std::string> >("joints", { "arm_lift_joint", "arm_flex_joint" });
+    if (controller_node_->has_parameter("joints")) {
+      std::vector<rclcpp::Parameter> params;
+      params.push_back(rclcpp::Parameter("joints", std::vector<std::string>{ "arm_lift_joint", "arm_flex_joint" }));
+      controller_node_->set_parameters(params);
+    } else {
+      controller_node_->declare_parameter<std::vector<std::string> >("joints", { "arm_lift_joint", "arm_flex_joint" });
+    }
 
-    controller_node_->declare_parameter<double>("publish_rate", 10.0);
+    if (controller_node_->has_parameter("publish_rate")) {
+      std::vector<rclcpp::Parameter> params;
+      params.push_back(rclcpp::Parameter("publish_rate", 10.0));
+      controller_node_->set_parameters(params);
+    } else {
+      controller_node_->declare_parameter<double>("publish_rate", 10.0);
+    }
 
-    EXPECT_EQ(controller_->init(kControllerNodeName), controller_interface::return_type::OK);
+    controller_->InitImpl();
 
     std::vector<std::string> joint_names = { "arm_lift_joint", "arm_flex_joint" };
     hardware_ = std::make_shared<HardwareStub>(joint_names);
@@ -66,6 +78,10 @@ class ExxxDriveModeControllerTest : public ::testing::Test {
         client_node_->create_client<tmc_control_msgs::srv::ChangeExxxDriveMode>("change_drive_mode");
 
     EXPECT_TRUE(change_mode_srv_client_->wait_for_service());
+  }
+
+  void TearDown() override {
+    controller_->release_interfaces();
   }
 
   void spin_some_thread(const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node) {
@@ -105,7 +121,7 @@ class ExxxDriveModeControllerTest : public ::testing::Test {
   rclcpp::Client<tmc_control_msgs::srv::ChangeExxxDriveMode>::SharedPtr change_mode_srv_client_;
 };
 TEST_F(ExxxDriveModeControllerTest, CheckPublication) {
-  // Waiting for subscribe
+  // Waiting for subscription
   const auto msg = WaitForDriveModeMessage();
   ASSERT_EQ(2, msg.drive_modes.size());
   EXPECT_EQ("arm_lift_joint", msg.drive_modes[0].joint);

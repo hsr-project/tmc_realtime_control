@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -26,7 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 /// @file exxx_drive_mode_controller.hpp
-/// @brief Controller for changing drive mode and issuing status
+/// @brief Controller for changing drive modes and publishing states
 
 #ifndef TMC_REALTIME_CONTROLLERS_EXXX_DRIVE_MODE_CONTROLLER_HPP_
 #define TMC_REALTIME_CONTROLLERS_EXXX_DRIVE_MODE_CONTROLLER_HPP_
@@ -54,9 +54,6 @@ class ExxxDriveModeController : public controller_interface::ControllerInterface
     kRequestReceive = 2,
     kRequestDone = 3,
   } request_state_;
-
-  controller_interface::return_type init(const std::string& controller_name, const std::string& namespace_ = "",
-                                         const rclcpp::NodeOptions& node_options = rclcpp::NodeOptions()) override;
 
   bool InitImpl();
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;

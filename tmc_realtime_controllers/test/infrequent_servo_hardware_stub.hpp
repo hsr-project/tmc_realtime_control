@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -47,10 +47,10 @@ class Handle {
   using Ptr = std::shared_ptr<Handle>;
 
   Handle(const std::string& joint_name, const std::string& state_name, const std::string& command_name)
-      : current_(0.0),
-        command_(0.0),
-        state_handle_(joint_name, state_name, &current_),
-        command_handle_(joint_name, command_name, &command_) {}
+      : current_(0.0), command_(0.0) {
+    state_handle_ = std::make_shared<hardware_interface::StateInterface>(joint_name, state_name, &current_);
+    command_handle_ = std::make_shared<hardware_interface::CommandInterface>(joint_name, command_name, &command_);
+  }
 
   Handle(const std::string& joint_name, const std::string& interface_name)
       : Handle(joint_name, interface_name, interface_name) {}
@@ -58,10 +58,10 @@ class Handle {
   virtual ~Handle() = default;
 
   hardware_interface::LoanedStateInterface GetStateInterface() {
-    return hardware_interface::LoanedStateInterface(state_handle_);
+    return hardware_interface::LoanedStateInterface(state_handle_, nullptr);
   }
   hardware_interface::LoanedCommandInterface GetCommandInterface() {
-    return hardware_interface::LoanedCommandInterface(command_handle_);
+    return hardware_interface::LoanedCommandInterface(command_handle_, nullptr);
   }
 
   double command() const { return command_; }
@@ -72,8 +72,8 @@ class Handle {
   double current_;
   double command_;
 
-  hardware_interface::StateInterface state_handle_;
-  hardware_interface::CommandInterface command_handle_;
+  hardware_interface::StateInterface::SharedPtr state_handle_;
+  hardware_interface::CommandInterface::SharedPtr command_handle_;
 };
 
 struct HardwareStub {
@@ -151,26 +151,19 @@ class TestableInfrequentWritingController : public InfrequentWritingController {
   TestableInfrequentWritingController();
   ~TestableInfrequentWritingController() = default;
 
-  controller_interface::return_type init(const std::string& controller_name, const std::string& namespace_ = "",
-                                         const rclcpp::NodeOptions& node_options = rclcpp::NodeOptions()) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_init() override;
 
   void SkipConfigure();
 };
 
 TestableInfrequentWritingController::TestableInfrequentWritingController() {
-  EXPECT_EQ(ControllerInterface::init(kWriteControllerNodeName), controller_interface::return_type::OK);
+  rclcpp::NodeOptions node_options;
+  EXPECT_EQ(ControllerInterface::init(kWriteControllerNodeName, "", 100, "", node_options),
+            controller_interface::return_type::OK);
 }
 
-controller_interface::return_type TestableInfrequentWritingController::init(const std::string& controller_name,
-                                                                            const std::string& namespace_,
-                                                                            const rclcpp::NodeOptions& node_options) {
-  controller_name_ = controller_name;
-
-  if (InitImpl()) {
-    return controller_interface::return_type::OK;
-  } else {
-    return controller_interface::return_type::ERROR;
-  }
+controller_interface::CallbackReturn TestableInfrequentWritingController::on_init() {
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 void TestableInfrequentWritingController::SkipConfigure() {}
@@ -183,26 +176,19 @@ class TestableInfrequentReadingController : public InfrequentReadingController {
   TestableInfrequentReadingController();
   ~TestableInfrequentReadingController() = default;
 
-  controller_interface::return_type init(const std::string& controller_name, const std::string& namespace_ = "",
-                                         const rclcpp::NodeOptions& node_options = rclcpp::NodeOptions()) override;
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_init() override;
 
   void SkipConfigure();
 };
 
 TestableInfrequentReadingController::TestableInfrequentReadingController() {
-  EXPECT_EQ(ControllerInterface::init(kReadControllerNodeName), controller_interface::return_type::OK);
+  rclcpp::NodeOptions node_options;
+  EXPECT_EQ(ControllerInterface::init(kReadControllerNodeName, "", 100, "", node_options),
+            controller_interface::return_type::OK);
 }
 
-controller_interface::return_type TestableInfrequentReadingController::init(const std::string& controller_name,
-                                                                            const std::string& namespace_,
-                                                                            const rclcpp::NodeOptions& node_options) {
-  controller_name_ = controller_name;
-
-  if (InitImpl()) {
-    return controller_interface::return_type::OK;
-  } else {
-    return controller_interface::return_type::ERROR;
-  }
+controller_interface::CallbackReturn TestableInfrequentReadingController::on_init() {
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 void TestableInfrequentReadingController::SkipConfigure() {}

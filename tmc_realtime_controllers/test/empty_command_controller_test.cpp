@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -32,11 +32,16 @@ DAMAGE.
 
 #include "../src/tmc_realtime_controllers/empty_command_controller.hpp"
 
+namespace {
+uint32_t CountCommandValues(const std::vector<double>& command_values, double target_value) {
+  return std::count(command_values.begin(), command_values.end(), target_value);
+}
+}  // namespace
+
 namespace tmc_realtime_controllers {
 
 class EmptyCommandControllerTest : public ::testing::Test {
  protected:
-  void SetUp() override;
   void TearDown() override;
 
   std::shared_ptr<EmptyCommandController> controller_;
@@ -50,24 +55,29 @@ class EmptyCommandControllerTest : public ::testing::Test {
   bool do_interrupt_;
   std::thread spinner_;
   void SpinSomeThread();
+
+  void SetUp(bool use_no_request_command_value);
 };
 
-void EmptyCommandControllerTest::SetUp() {
+void EmptyCommandControllerTest::SetUp(bool use_no_request_command_value) {
   controller_ = std::make_shared<EmptyCommandController>();
 
   rclcpp::NodeOptions node_options;
   node_options.parameter_overrides() = {
       rclcpp::Parameter("command_interface_name", "test_device/test_interface"),
       rclcpp::Parameter("service_name", "~/test_trigger"),
-      rclcpp::Parameter("command_value", 42.0)
+      rclcpp::Parameter("command_value", 42.0),
+      rclcpp::Parameter("use_no_request_command_value", use_no_request_command_value),
+      rclcpp::Parameter("no_request_command_value", -1.0)
   };
-  ASSERT_EQ(controller_->init("empty_command_controller", "", node_options), controller_interface::return_type::OK);
+  ASSERT_EQ(controller_->init("empty_command_controller", "", 100, "", node_options),
+            controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
 
   std::vector<hardware_interface::LoanedCommandInterface> command_interfaces;
   command_interface_ = std::make_shared<hardware_interface::CommandInterface>(
       "test_device", "test_interface", &command_value_);
-  command_interfaces.emplace_back(hardware_interface::LoanedCommandInterface(*command_interface_));
+  command_interfaces.emplace_back(hardware_interface::LoanedCommandInterface(command_interface_, nullptr));
   controller_->assign_interfaces(std::move(command_interfaces), {});
 
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
@@ -92,6 +102,8 @@ void EmptyCommandControllerTest::SpinSomeThread() {
 }
 
 TEST_F(EmptyCommandControllerTest, CallEmptyService) {
+  SetUp(false);
+
   auto request = std::make_shared<std_srvs::srv::Empty::Request>();
   auto future_result = client_->async_send_request(request);
 
@@ -104,7 +116,7 @@ TEST_F(EmptyCommandControllerTest, CallEmptyService) {
   const auto response = future_result.get();
   EXPECT_DOUBLE_EQ(command_value_, 42.0);
 
-  // Ensure that only one command is sent per service invocation
+  // Ensure that only one command is sent per service call
   command_value_ = 0.0;
   for (int i = 0; i < 10; i++) {
     ASSERT_EQ(controller_->update(rclcpp::Time(0, 0), rclcpp::Duration(0, 0)),
@@ -112,6 +124,32 @@ TEST_F(EmptyCommandControllerTest, CallEmptyService) {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   EXPECT_DOUBLE_EQ(command_value_, 0.0);
+}
+
+TEST_F(EmptyCommandControllerTest, UseNoCommandValue) {
+  SetUp(true);
+
+  auto request = std::make_shared<std_srvs::srv::Empty::Request>();
+  auto future_result = client_->async_send_request(request);
+
+  std::vector<double> command_values;
+  while (rclcpp::ok() && future_result.wait_for(std::chrono::milliseconds(1)) != std::future_status::ready) {
+    ASSERT_EQ(controller_->update(rclcpp::Time(0, 0), rclcpp::Duration(0, 0)),
+              controller_interface::return_type::OK);
+    command_values.push_back(command_value_);
+    rclcpp::spin_some(client_node_);
+  }
+
+  // Call update additionally to confirm that only one command is sent per service call
+  for (int i = 0; i < 10; i++) {
+    ASSERT_EQ(controller_->update(rclcpp::Time(0, 0), rclcpp::Duration(0, 0)),
+              controller_interface::return_type::OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  // The value is 42.0 only once
+  EXPECT_EQ(CountCommandValues(command_values, 42.0), 1);
+  EXPECT_EQ(CountCommandValues(command_values, -1.0), command_values.size() - 1);
 }
 
 }  // namespace tmc_realtime_controllers

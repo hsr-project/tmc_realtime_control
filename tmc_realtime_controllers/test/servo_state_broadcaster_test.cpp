@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -43,12 +43,25 @@ class ServoStateBroadcasterTest : public ::testing::Test {
   void SetUp() override {
     controller_ = std::make_shared<TestableServoStateBroadcaster>();
     controller_node_ = controller_->get_node();
-    controller_node_->declare_parameter<std::vector<std::string> >("joints", { "arm_lift_joint", "arm_flex_joint" });
 
-    // Set igain to zero to eliminate the effect of multiple calls to update with WaitFor
-    controller_node_->declare_parameter<double>("publish_rate", 30.0);
+    if (controller_node_->has_parameter("joints")) {
+      std::vector<rclcpp::Parameter> params;
+      params.push_back(rclcpp::Parameter("joints", std::vector<std::string>{ "arm_lift_joint", "arm_flex_joint" }));
+      controller_node_->set_parameters(params);
+    } else {
+      controller_node_->declare_parameter<std::vector<std::string> >("joints", { "arm_lift_joint", "arm_flex_joint" });
+    }
 
-    EXPECT_EQ(controller_->init(kControllerNodeName), controller_interface::return_type::OK);
+    // To eliminate the effect of multiple calls to update in WaitFor, set igain to zero
+    if (controller_node_->has_parameter("publish_rate")) {
+      std::vector<rclcpp::Parameter> params;
+      params.push_back(rclcpp::Parameter("publish_rate", 30.0));
+      controller_node_->set_parameters(params);
+    } else {
+      controller_node_->declare_parameter<double>("publish_rate", 30.0);
+    }
+
+    controller_->InitImpl();
 
     joint_names_ = { "arm_lift_joint", "arm_flex_joint" };
     hardware_ = std::make_shared<HardwareStub>(joint_names_);
@@ -62,6 +75,10 @@ class ServoStateBroadcasterTest : public ::testing::Test {
     servostate_subscription_ = client_node_->create_subscription<tmc_control_msgs::msg::ServoState>(
         "servo_states", rclcpp::SystemDefaultsQoS(),
         std::bind(&ServoStateBroadcasterTest::current_servo_state_callback, this, std::placeholders::_1));
+  }
+
+  void TearDown() override {
+    controller_->release_interfaces();
   }
 
  protected:

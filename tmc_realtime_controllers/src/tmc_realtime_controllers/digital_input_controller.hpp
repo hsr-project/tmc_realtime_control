@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -31,9 +31,9 @@ DAMAGE.
 #include <string>
 
 #include <controller_interface/controller_interface.hpp>
-#include <realtime_tools/realtime_publisher.hpp>
 #include <std_msgs/msg/bool.hpp>
 
+#include <tmc_realtime_tools/realtime_publisher.hpp>
 
 namespace tmc_realtime_controllers {
 
@@ -60,7 +60,7 @@ class DigitalInputController : public controller_interface::ControllerInterface 
 
   // publisher
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr publisher_;
-  using RealtimePublisher = realtime_tools::RealtimePublisher<std_msgs::msg::Bool>;
+  using RealtimePublisher = tmc_realtime_tools::RealtimePublisher<std_msgs::msg::Bool>;
   std::unique_ptr<RealtimePublisher> realtime_publisher_;
 };
 

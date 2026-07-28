@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -66,6 +66,7 @@ class DigitalInputControllerTest :public ::testing::Test {
 
   // TearDown for test cleanup
   void TearDown() override {
+    controller_->release_interfaces();
     rclcpp::shutdown();
   }
 
@@ -88,7 +89,7 @@ class DigitalInputControllerTest :public ::testing::Test {
     node_options.parameter_overrides() = parameters;
     // Controller State Change to UnConfigured
     ASSERT_EQ(
-      controller_interface::return_type::OK, controller_->init("digital_input_controller", "", node_options));
+      controller_interface::return_type::OK, controller_->init("digital_input_controller", "", 100, "", node_options));
     // Controller State Change to Configured
     ASSERT_EQ(
       controller_interface::CallbackReturn::SUCCESS, controller_->on_configure(rclcpp_lifecycle::State()));
@@ -107,7 +108,7 @@ class DigitalInputControllerTest :public ::testing::Test {
     std::vector<hardware_interface::LoanedStateInterface> state_interfaces;
     state_interface_ = std::make_shared<hardware_interface::StateInterface>(
         kStateInterfacePrefix, kStateInterfaceBaseName, &state_interface_value_);
-    state_interfaces.emplace_back(hardware_interface::LoanedStateInterface(*state_interface_));
+    state_interfaces.emplace_back(hardware_interface::LoanedStateInterface(state_interface_, nullptr));
     controller_->assign_interfaces({}, std::move(state_interfaces));
   }
 
@@ -186,7 +187,7 @@ TEST_F(DigitalInputControllerTest, ConfigureNoNameInterface) {
   node_options.parameter_overrides() = {rclcpp::Parameter("topic_name", kStateTopicName)};
 
   EXPECT_EQ(
-    controller_interface::return_type::ERROR, controller_->init("digital_input_controller", "", node_options));
+    controller_interface::return_type::ERROR, controller_->init("digital_input_controller", "", 100, "", node_options));
 }
 
 

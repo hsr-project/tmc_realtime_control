@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -26,7 +26,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 */
 /// @file exxx_drive_mode_controller.cpp
-/// @brief Controller to change drive mode
+/// @brief Controller to change the drive mode
 #include <limits>
 #include <string>
 #include <vector>
@@ -40,6 +40,8 @@ DAMAGE.
 #include <tmc_realtime_controllers/exxx_drive_mode_controller.hpp>
 #include <tmc_realtime_controllers/servo_state_broadcaster.hpp>
 
+#include "utils.hpp"
+
 using tmc_control_msgs::msg::ExxxDriveMode;
 
 namespace {
@@ -48,7 +50,7 @@ namespace {
 const int kDriveModeTick = 10;
 /// Timeout for mode switching
 const double kRequestTimeout = 10.0;
-/// Default issue rate of mode [Hz]
+/// Default publishing rate of the mode [Hz]
 const double kDefalutPublishRate = 10.0;
 
 }  // unnamed namespace
@@ -56,26 +58,9 @@ const double kDefalutPublishRate = 10.0;
 
 namespace tmc_realtime_controllers {
 
-controller_interface::return_type ExxxDriveModeController::init(const std::string& controller_name,
-                                                                const std::string& namespace_,
-                                                                const rclcpp::NodeOptions& node_options) {
-  // NOTE: no member
-  // node_options.enable_logger_service(true);
-  const auto ret = ControllerInterface::init(controller_name, namespace_, node_options);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
-
-  if (InitImpl()) {
-    return controller_interface::return_type::OK;
-  } else {
-    return controller_interface::return_type::ERROR;
-  }
-}
-
 bool ExxxDriveModeController::InitImpl() {
   joint_names_ = GetParameter(get_node(), "joints", std::vector<std::string>({ "" }));
-  // If joints cannot be obtained, respond with an error.
+  // If joints cannot be retrieved, respond with an error.
   if (joint_names_.size() == 0) {
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "joints parameter is empty");
     return false;
@@ -115,13 +100,13 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
     }
     tmc_control_msgs::msg::ExxxDriveMode drive_mode;
     drive_mode.joint = joint_name;
-    drive_mode.value = state_interfaces_[current_drive_mode_index.value()].get_value();
+    drive_mode.value = GetStateInterfaceValue(state_interfaces_[current_drive_mode_index.value()]);
     drive_modes.push_back(drive_mode);
   }
 
   drive_modes_buffer_.writeFromNonRT(drive_modes);
 
-  // Issue drive_mode at the specified cycle
+  // Publish drive_mode at the specified interval
   if ((time.seconds() - last_published_time_.seconds()) >= expected_publish_time_) {
     if (publisher_->trylock()) {
       tmc_control_msgs::msg::JointExxxDriveMode& msg = publisher_->msg_;
@@ -132,7 +117,7 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
   }
 
   // Progress the request state in the order of Send->Receive->Done
-  // The service side checks the state transition after it becomes Done
+  // The service side confirms the state transition after it becomes Done
   {
     boost::mutex::scoped_lock lock(request_lock_, boost::try_to_lock);
     if (lock) {
@@ -153,7 +138,9 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
         RCLCPP_ERROR_STREAM(rclcpp::get_logger("rclcpp"), " Joint name was not found. Joint : " << drive_mode.joint);
         continue;
       }
-      command_interfaces_[command_drive_mode_index.value()].set_value(static_cast<double>(drive_mode.value));
+      SetCommandInterfaceValue(rclcpp::get_logger("rclcpp"),
+                               command_interfaces_[command_drive_mode_index.value()],
+                               static_cast<double>(drive_mode.value));
     }
     {
       boost::mutex::scoped_lock lock(request_lock_, boost::try_to_lock);
@@ -171,7 +158,11 @@ controller_interface::return_type ExxxDriveModeController::update(const rclcpp::
 
 
 controller_interface::CallbackReturn ExxxDriveModeController::on_init() {
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  if (InitImpl()) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  } else {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
 }
 
 controller_interface::InterfaceConfiguration ExxxDriveModeController::command_interface_configuration() const {
@@ -217,7 +208,7 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn ExxxDr
 void ExxxDriveModeController::ChangeDriveModeCallBack(
     const std::shared_ptr<tmc_control_msgs::srv::ChangeExxxDriveMode::Request> request,
     const std::shared_ptr<tmc_control_msgs::srv::ChangeExxxDriveMode::Response> response) {
-  // Immediate failure if the request is not in the registered handle
+  // Immediately fail if the request is not in the registered handle
   std::vector<std::string> joints = joint_names_;
   for (ExxxDriveMode command_mode : request->drive_mode_request.drive_modes) {
     if (std::find(joints.begin(), joints.end(), command_mode.joint) == joints.end()) {
@@ -227,7 +218,7 @@ void ExxxDriveModeController::ChangeDriveModeCallBack(
     }
   }
 
-  // Convey the request to the real-time side
+  // Communicate the request to the real-time side
   request_buffer_.writeFromNonRT(request->drive_mode_request.drive_modes);
 
   // Wait until the new drive_mode is expected to arrive
@@ -261,7 +252,7 @@ void ExxxDriveModeController::ChangeDriveModeCallBack(
     request_state_ = kNoRequest;
   }
 
-  // Check if the drive_mode was changed as requested
+  // Verify if the drive_mode was changed as requested
   std::vector<ExxxDriveMode> drive_modes =
     *drive_modes_buffer_.readFromNonRT();
   bool success = true;

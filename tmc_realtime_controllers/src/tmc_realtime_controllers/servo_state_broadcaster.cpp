@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2025 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -35,30 +35,15 @@ DAMAGE.
 #include <rclcpp/rclcpp.hpp>
 #include <tmc_realtime_controllers/servo_state_broadcaster.hpp>
 
+#include "utils.hpp"
+
 namespace tmc_realtime_controllers {
 
 ServoStateBroadcaster::ServoStateBroadcaster() {}
 
-controller_interface::return_type ServoStateBroadcaster::init(const std::string& controller_name,
-                                                              const std::string& namespace_,
-                                                              const rclcpp::NodeOptions& node_options) {
-  // NOTE: no member
-  // node_options.enable_logger_service(true);
-  const auto ret = ControllerInterface::init(controller_name, namespace_, node_options);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
-
-  if (InitImpl()) {
-    return controller_interface::return_type::OK;
-  } else {
-    return controller_interface::return_type::ERROR;
-  }
-}
-
 bool ServoStateBroadcaster::InitImpl() {
   joint_names_ = GetParameter(get_node(), "joints", std::vector<std::string>({ "" }));
-  // If joints cannot be obtained, respond with an error.
+  // Respond with an error if joints could not be retrieved.
   if (joint_names_.size() == 0) {
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "joints parameter is empty");
     return false;
@@ -94,7 +79,11 @@ controller_interface::InterfaceConfiguration ServoStateBroadcaster::state_interf
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn ServoStateBroadcaster::on_init() {
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  if (InitImpl()) {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  } else {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+  }
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn ServoStateBroadcaster::on_configure(
@@ -108,10 +97,10 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn ServoS
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn ServoStateBroadcaster::on_activate(
     const rclcpp_lifecycle::State& previous_state) {
-  // Initialize last_published_time_
+  // Initialize last_published_time_.
   last_published_time_ = get_node()->get_clock()->now().seconds();
 
-  // Initialize the index of each item
+  // Initialize the index of each item.
   for (auto joint_name : joint_names_) {
     state_current_drive_mode_index_.push_back(GetIndex(state_interfaces_, joint_name, "current_drive_mode"));
     state_position_index_.push_back(GetIndex(state_interfaces_, joint_name, hardware_interface::HW_IF_POSITION));
@@ -163,15 +152,24 @@ controller_interface::return_type ServoStateBroadcaster::update(const rclcpp::Ti
           continue;
         }
         msg.name.push_back(joint_names_[i]);
-        msg.current_drive_mode.push_back(state_interfaces_[state_current_drive_mode_index_[i].value()].get_value());
-        msg.present_position.push_back(state_interfaces_[state_position_index_[i].value()].get_value());
-        msg.present_velocity.push_back(state_interfaces_[state_velocity_index_[i].value()].get_value());
-        msg.present_effort.push_back(state_interfaces_[state_effort_index_[i].value()].get_value());
-        msg.present_temperature.push_back(state_interfaces_[state_temperature_index_[i].value()].get_value());
-        msg.present_current.push_back(state_interfaces_[state_current_index_[i].value()].get_value());
-        msg.present_motor_shaft_position.push_back(state_interfaces_[state_mrpos_index_[i].value()].get_value());
-        msg.present_driven_shaft_position.push_back(state_interfaces_[state_avagopos_index_[i].value()].get_value());
-        msg.error_status.push_back(state_interfaces_[state_error_status_index_[i].value()].get_value());
+        msg.current_drive_mode.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_current_drive_mode_index_[i].value()]));
+        msg.present_position.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_position_index_[i].value()]));
+        msg.present_velocity.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_velocity_index_[i].value()]));
+        msg.present_effort.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_effort_index_[i].value()]));
+        msg.present_temperature.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_temperature_index_[i].value()]));
+        msg.present_current.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_current_index_[i].value()]));
+        msg.present_motor_shaft_position.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_mrpos_index_[i].value()]));
+        msg.present_driven_shaft_position.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_avagopos_index_[i].value()]));
+        msg.error_status.push_back(
+          GetStateInterfaceValue(state_interfaces_[state_error_status_index_[i].value()]));
       }
       publisher_->unlockAndPublish();
       last_published_time_ += expected_publish_time_;

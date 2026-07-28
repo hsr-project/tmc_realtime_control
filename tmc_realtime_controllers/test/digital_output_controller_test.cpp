@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2024 TOYOTA MOTOR CORPORATION
+Copyright (c) 2026 TOYOTA MOTOR CORPORATION
 All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted (subject to the limitations in the disclaimer
@@ -44,6 +44,7 @@ class DigitalOutputControllerTest : public ::testing::Test {
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr publisher_;
 
   void SetUp() override;
+  void TearDown() override;
   void ConfigureController(const std::vector<rclcpp::Parameter>& parameters);
   void ConfigureController();
 
@@ -58,17 +59,21 @@ void DigitalOutputControllerTest::SetUp() {
   publisher_ = client_node_->create_publisher<std_msgs::msg::Bool>("test_command", rclcpp::SystemDefaultsQoS());
 }
 
+void DigitalOutputControllerTest::TearDown() {
+    controller_->release_interfaces();
+}
+
 void DigitalOutputControllerTest::ConfigureController(const std::vector<rclcpp::Parameter>& parameters) {
   rclcpp::NodeOptions node_options;
   node_options.parameter_overrides() = parameters;
-  ASSERT_EQ(controller_->init("digital_output_controller", "", node_options), controller_interface::return_type::OK);
-
+  ASSERT_EQ(controller_->init("digital_output_controller", "", 100, "", node_options),
+            controller_interface::return_type::OK);
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
 
   std::vector<hardware_interface::LoanedCommandInterface> command_interfaces;
   command_interface_ = std::make_shared<hardware_interface::CommandInterface>(
       "system", "test_interface", &command_value_);
-  command_interfaces.emplace_back(hardware_interface::LoanedCommandInterface(*command_interface_));
+  command_interfaces.emplace_back(hardware_interface::LoanedCommandInterface(command_interface_, nullptr));
   controller_->assign_interfaces(std::move(command_interfaces), {});
 
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), controller_interface::CallbackReturn::SUCCESS);
@@ -146,7 +151,8 @@ TEST_F(DigitalOutputControllerTest, DefaultValueTrue) {
 TEST_F(DigitalOutputControllerTest, CommandInterfaceNameNotSet) {
   rclcpp::NodeOptions node_options;
   node_options.parameter_overrides() = {rclcpp::Parameter("topic_name", "servo_enable")};
-  EXPECT_EQ(controller_->init("digital_output_controller", "", node_options), controller_interface::return_type::ERROR);
+  EXPECT_EQ(controller_->init("digital_output_controller", "", 100, "", node_options),
+            controller_interface::return_type::ERROR);
 }
 
 TEST_F(DigitalOutputControllerTest, CommandInterfaceName) {

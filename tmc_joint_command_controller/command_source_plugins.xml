@@ -1,0 +1,51 @@
+<library path="tmc_joint_command_controller">
+  <class name="tmc_joint_command_controller/PositionHolding"
+         type="tmc_joint_command_controller::PositionHolding"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Position holding.
+    </description>
+  </class>
+  <class name="tmc_joint_command_controller/VelocityHolding"
+         type="tmc_joint_command_controller::VelocityHolding"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Velocity holding.
+    </description>
+  </class>
+  <class name="tmc_joint_command_controller/PositionVelocityHolding"
+         type="tmc_joint_command_controller::PositionVelocityHolding"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Position and velocity holding.
+    </description>
+  </class>
+  <class name="tmc_joint_command_controller/JointTrajectoryAction"
+         type="tmc_joint_command_controller::JointTrajectoryAction"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Joint trajectory action server.
+    </description>
+  </class>
+  <class name="tmc_joint_command_controller/JointTrajectoryTopic"
+         type="tmc_joint_command_controller::JointTrajectoryTopic"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Joint trajectory subscription.
+    </description>
+  </class>
+  <class name="tmc_joint_command_controller/PositionJogTopic"
+         type="tmc_joint_command_controller::PositionJogTopic"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Position jog command subscription.
+    </description>
+  </class>
+  <class name="tmc_joint_command_controller/VelocityJogTopic"
+         type="tmc_joint_command_controller::VelocityJogTopic"
+         base_class_type="tmc_joint_command_controller::IJointCommandSource">
+    <description>
+      Velocity jog command subscription.
+    </description>
+  </class>
+</library>

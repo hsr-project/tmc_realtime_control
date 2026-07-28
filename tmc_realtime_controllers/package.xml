@@ -1,6 +1,6 @@
 <package format="3">
   <name>tmc_realtime_controllers</name>
-  <version>2.2.0</version>
+  <version>3.0.0</version>
   <description>The robot independent controllers.</description>
 
   <maintainer email="xr-hsr-support@mail.toyota.co.jp">HSR Support</maintainer>
@@ -10,12 +10,14 @@
   <depend>controller_interface</depend>
   <depend>fmt</depend>
   <depend>lifecycle_msgs</depend>
+  <depend>moveit_msgs</depend>
   <depend>pluginlib</depend>
   <depend>realtime_tools</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
   <depend>tmc_control_msgs</depend>
   <depend>tmc_exxx_servo_motor_protocol</depend>
+  <depend>tmc_realtime_tools</depend>
   <depend>tmc_utils</depend>
   <depend>urdf</depend>
 
